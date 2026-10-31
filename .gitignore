@@ -18,6 +18,11 @@ __pycache__/
 venv/
 env/
 *.egg-info/
+*.db
+*.sqlite
+*.sqlite3
+sentiment_hub.db
+backend/sentiment_hub.db
 
 # OS & Editor
 .DS_Store

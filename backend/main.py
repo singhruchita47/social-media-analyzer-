@@ -34,12 +34,13 @@ load_dotenv(os.path.join(_backend_dir, ".env.example"))
 load_dotenv()
 
 app = FastAPI(
-    title="Real-Time Social Media Sentiment Analysis API",
+    title="Real-Time Social Media Sentiment Analysis API (Claude 3.5 Sonnet / GPT-4o / Gemini)",
     description=(
-        "Production-grade Python FastAPI + Pandas + NumPy + Google Gemini NLP backend "
-        "for analyzing YouTube and Instagram comment streams."
+        "Production-grade Python FastAPI + Pandas + NumPy + Emoji Demojization + "
+        "Anthropic Claude 3.5 Sonnet / OpenAI GPT-4o / Google Gemini NLP backend "
+        "with full nextPageToken YouTube comment pagination, sarcasm detection, and Hinglish intelligence."
     ),
-    version="2.0.0",
+    version="3.0.0",
 )
 
 cors_origins_env = os.getenv(
@@ -296,10 +297,16 @@ def health_check() -> Dict[str, object]:
             "framework": "FastAPI + Uvicorn",
             "pandas_version": pd.__version__,
             "numpy_version": np.__version__,
-            "database": "SQLite3",
+            "database": "SQLite3 + Optional MongoDB",
+            "anthropic_claude_configured": nlp_engine._has_valid_anthropic_key(),
+            "openai_gpt4o_configured": nlp_engine._has_valid_openai_key(),
             "gemini_configured": nlp_engine._has_valid_gemini_key(),
             "youtube_api_configured": fetcher._has_valid_youtube_key(),
             "instagram_api_configured": fetcher._has_valid_instagram_token(),
+            "mongodb_configured": db.mongo_collection is not None,
+            "youtube_pagination": "Full while-loop nextPageToken (100+ comments)",
+            "emoji_preprocessing": "Python emoji.demojize + DeepMoji 64-Emotion Polarity-Clash Engine",
+            "open_source_models": "CardiffNLP Twitter-RoBERTa-base (cardiffnlp/twitter-roberta-base-sentiment-latest) + DeepMoji",
         },
         "analyzed_posts_count": db.count_analyses(),
     }
@@ -749,8 +756,8 @@ def get_aggregated_stats(
         engagement_trends=engagement_trends,
         top_keywords=top_keywords_list,
         pain_points=pain_points_list,
-        critical_feedback=critical_feedback[:10],
-        recent_comments=recent_comments[:60],
+        critical_feedback=critical_feedback[:25],
+        recent_comments=recent_comments[:500],
     )
 
 

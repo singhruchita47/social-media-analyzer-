@@ -221,7 +221,7 @@ export default function Sidebar({
           >
             <span className="flex items-center gap-3">
               <Radio className="w-4 h-4 text-emerald-500" />
-              FastAPI + Gemini Engine
+              RoBERTa + DeepMoji + AI
             </span>
             <span
               className={`w-2 h-2 rounded-full ${

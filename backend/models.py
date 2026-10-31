@@ -24,7 +24,7 @@ class AnalyzeRequest(BaseModel):
         description="Optional list of raw comment strings to analyze alongside or instead of API fetch",
     )
     max_comments: int = Field(
-        default=120, ge=10, le=500, description="Maximum number of comments to fetch"
+        default=500, ge=10, le=2000, description="Maximum number of comments to fetch via full pagination (100+ comments)"
     )
 
 
@@ -197,7 +197,7 @@ class AggregatedStatsResponse(BaseModel):
 
 
 class DatabaseManager:
-    """SQLite persistence layer for saving and querying social sentiment analyses."""
+    """SQLite + Optional MongoDB (MONGO_URI) persistence layer for saving and querying social sentiment analyses."""
 
     def __init__(self, db_path: Optional[str] = None):
         backend_dir = os.path.dirname(os.path.abspath(__file__))
@@ -208,6 +208,16 @@ class DatabaseManager:
             else:
                 db_path = os.path.join(backend_dir, "sentiment_hub.db")
         self.db_path = db_path
+        self.mongo_uri = os.getenv("MONGO_URI", "").strip()
+        self.mongo_collection = None
+        if self.mongo_uri and not self.mongo_uri.startswith("your_"):
+            try:
+                from pymongo import MongoClient
+                client = MongoClient(self.mongo_uri, serverSelectionTimeoutMS=2500)
+                db_name = os.getenv("MONGO_DB_NAME", "social_sentiment_hub")
+                self.mongo_collection = client[db_name]["analyses"]
+            except Exception:
+                self.mongo_collection = None
         self._init_db()
 
     def _get_conn(self) -> sqlite3.Connection:
@@ -267,6 +277,13 @@ class DatabaseManager:
                 ),
             )
             conn.commit()
+        if self.mongo_collection is not None:
+            try:
+                doc = result.model_dump()
+                doc["_id"] = result.id
+                self.mongo_collection.replace_one({"_id": result.id}, doc, upsert=True)
+            except Exception:
+                pass
 
     def get_all_analyses(
         self, platform: Optional[str] = None, limit: int = 50

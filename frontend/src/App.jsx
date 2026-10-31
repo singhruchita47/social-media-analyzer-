@@ -533,7 +533,7 @@ export default function App() {
                       {isYT ? 'YouTube' : 'Instagram'} AI Comments Sentiment Analysis
                     </h1>
                     <p className="text-xs text-slate-400 mt-0.5">
-                      Deep NLP analysis of {(activeViewStats?.total_comments_analyzed ?? 0).toLocaleString()} {isYT ? 'YouTube' : 'Instagram'} comments (Pandas Cleaned + NumPy Scored + Google Gemini)
+                      Deep NLP analysis of {(activeViewStats?.total_comments_analyzed ?? 0).toLocaleString()} {isYT ? 'YouTube' : 'Instagram'} comments (Full Pagination • Emoji Demojization • Sarcasm & Hinglish AI)
                     </p>
                   </div>
                 </div>

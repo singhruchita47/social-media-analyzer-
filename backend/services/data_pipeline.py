@@ -5,6 +5,55 @@ import numpy as np
 import pandas as pd
 from models import CommentItem, PipelineMetrics, SentimentBreakdown
 
+try:
+    import emoji
+except ImportError:
+    emoji = None
+
+EMOJI_FEELING_MAP = {
+    "🔥": " [EMOJI:fire_enthusiasm_positive] ",
+    "❤️": " [EMOJI:red_heart_love_positive] ",
+    "❤": " [EMOJI:heart_love_positive] ",
+    "😍": " [EMOJI:heart_eyes_adoration_positive] ",
+    "🥰": " [EMOJI:smiling_hearts_affection_positive] ",
+    "👏": " [EMOJI:clapping_applause] ",
+    "🙌": " [EMOJI:raising_hands_celebration_positive] ",
+    "💯": " [EMOJI:hundred_points_perfect_positive] ",
+    "👍": " [EMOJI:thumbs_up_approval_positive] ",
+    "👎": " [EMOJI:thumbs_down_disapproval_negative] ",
+    "😡": " [EMOJI:angry_rage_negative] ",
+    "🤬": " [EMOJI:cursing_furious_negative] ",
+    "🤮": " [EMOJI:vomiting_disgust_negative] ",
+    "💩": " [EMOJI:pile_of_poo_terrible_negative] ",
+    "😤": " [EMOJI:frustrated_steaming_negative] ",
+    "😒": " [EMOJI:unamused_skeptical_negative] ",
+    "🙄": " [EMOJI:eye_roll_sarcastic_negative] ",
+    "🤡": " [EMOJI:clown_face_mockery_sarcasm_negative] ",
+    "💔": " [EMOJI:broken_heart_disappointed_negative] ",
+    "😭": " [EMOJI:loudly_crying_upset] ",
+    "😢": " [EMOJI:crying_sad_negative] ",
+    "💀": " [EMOJI:skull_slang_shock_or_funny] ",
+    "😂": " [EMOJI:tears_of_joy_laughing] ",
+    "🤣": " [EMOJI:rolling_on_floor_laughing] ",
+}
+
+
+def demojize_with_feelings(text: Any) -> str:
+    """
+    Translates emojis into descriptive text tokens using the Python `emoji` library
+    plus semantic feeling descriptors so the LLM decodes emotional & sarcastic nuance.
+    """
+    if not text:
+        return ""
+    s = str(text)
+    for em_char, feeling_token in EMOJI_FEELING_MAP.items():
+        if em_char in s:
+            s = s.replace(em_char, feeling_token)
+    if emoji is not None:
+        s = emoji.demojize(s, delimiters=(" [EMOJI:", "] "))
+    return re.sub(r"\s+", " ", s).strip()
+
+
 BOT_SPAM_REGEX = re.compile(
     r"(check my bio|free crypto|gain \d+k? followers|instant_followers|message whatsapp|"
     r"work(?:ing)? from home.*?\$\d+|dm @[a-z0-9_.]+ to gain|telegram @[a-z0-9_]+)",
@@ -16,6 +65,8 @@ def _normalize_text(text: Any) -> str:
     if text is None or (isinstance(text, float) and np.isnan(text)):
         return ""
     s = html.unescape(str(text)).strip()
+    # Strip HTML tags (e.g., <br>, <a>, <b>)
+    s = re.sub(r"<[^>]+>", " ", s)
     # Remove URLs
     s = re.sub(r"https?://\S+|www\.\S+", "", s)
     # Collapse excessive whitespace
@@ -105,11 +156,12 @@ class DataProcessingPipeline:
         df["platform"] = platform
         df["likes"] = pd.to_numeric(df["likes"], errors="coerce").fillna(0).astype(int)
 
-        # Step 1: Normalize text & drop missing/empty comments
+        # Step 1: Normalize text, strip HTML tags, drop missing/empty comments, and demojize emojis into descriptive text tokens
         df["cleaned_text"] = df["raw_text"].apply(_normalize_text)
         missing_mask = df["cleaned_text"].isna() | (df["cleaned_text"].str.len() == 0)
         missing_dropped = int(missing_mask.sum())
         df = df[~missing_mask].copy()
+        df["demojized_text"] = df["cleaned_text"].apply(demojize_with_feelings)
 
         # Step 2: Filter emoji-only or symbol-only spam
         emoji_mask = df.apply(_is_emoji_only_or_symbol_spam, axis=1)

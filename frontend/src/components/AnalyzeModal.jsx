@@ -51,7 +51,7 @@ export default function AnalyzeModal({
       await onSubmitAnalysis({
         platform,
         post_url: postUrl.trim(),
-        max_comments: 120,
+        max_comments: 500,
       });
       setPostUrl('');
     } catch (err) {

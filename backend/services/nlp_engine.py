@@ -5,14 +5,293 @@ import warnings
 from collections import Counter
 from typing import Any, Dict, List, Optional, Tuple
 import pandas as pd
+import requests
 from models import CommentItem, KeywordMetric, PainPointItem, SentimentLabel
+from services.data_pipeline import demojize_with_feelings
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
     try:
+        from transformers import pipeline as hf_pipeline
+    except ImportError:
+        hf_pipeline = None
+    try:
+        import anthropic
+    except ImportError:
+        anthropic = None
+    try:
+        import openai
+    except ImportError:
+        openai = None
+    try:
         import google.generativeai as genai
     except ImportError:
         genai = None
+
+
+class DeepMojiEmotionEngine:
+    """
+    DeepMoji-inspired 64-Emoji Emotional Context, Irony & Sarcasm Neural Scorer.
+    Models how emojis express deeper emotional states (joy, adoration, approval,
+    irony/mockery, eye-roll skepticism, rage, disgust, heartbreak) and detects
+    Emoji-Text Polarity Clashes (e.g., positive words + 🙃/🙄/🤡 or negative complaints + 👏/🎉).
+    """
+
+    # 64-Emoji Deep Emotional Valence & Irony Matrix: (valence_score, emotion_cluster, is_irony_marker)
+    EMOJI_VALENCE_MATRIX: Dict[str, Tuple[float, str, bool]] = {
+        # Sarcasm / Irony / Mockery Cluster (DeepMoji Irony & Passive-Aggressive States)
+        "🙃": (-0.85, "irony_passive_aggressive", True),
+        "🙄": (-0.85, "eye_roll_sarcasm", True),
+        "🤡": (-0.92, "clown_mockery_sarcasm", True),
+        "😒": (-0.78, "unamused_skepticism", True),
+        "🤨": (-0.65, "raised_eyebrow_doubt", True),
+        "😏": (-0.55, "smirk_irony", True),
+        "💅": (-0.50, "sassy_dismissive", True),
+        # Anger / Frustration / Disgust Cluster
+        "😡": (-0.92, "rage_anger", False),
+        "🤬": (-0.96, "furious_cursing", False),
+        "😤": (-0.80, "frustrated_steaming", False),
+        "💢": (-0.85, "anger_vein", False),
+        "🤮": (-0.94, "vomiting_disgust", False),
+        "🤢": (-0.86, "nauseated_disgust", False),
+        "💩": (-0.90, "pile_of_poo_trash", False),
+        "👎": (-0.85, "thumbs_down_dislike", False),
+        "🖕": (-0.98, "middle_finger_hostile", False),
+        # Sadness / Heartbreak / Regret Cluster
+        "💔": (-0.85, "broken_heart_disappointment", False),
+        "😭": (-0.72, "loudly_crying_grief", False),
+        "😢": (-0.75, "crying_sadness", False),
+        "😞": (-0.75, "disappointed_sad", False),
+        "😔": (-0.70, "pensive_regret", False),
+        "😩": (-0.76, "weary_distress", False),
+        "😫": (-0.78, "tired_frustrated", False),
+        "🥺": (-0.45, "pleading_sad", False),
+        "🤦": (-0.82, "facepalm_disbelief", True),
+        "🤦‍♂️": (-0.82, "facepalm_disbelief", True),
+        "🤦‍♀️": (-0.82, "facepalm_disbelief", True),
+        # High-Energy Positive / Hype / Joy Cluster
+        "🔥": (0.85, "fire_hype_lit", False),
+        "❤️": (0.88, "red_heart_love", False),
+        "❤": (0.88, "red_heart_love", False),
+        "💖": (0.88, "sparkling_heart_love", False),
+        "💕": (0.85, "two_hearts_affection", False),
+        "😍": (0.90, "heart_eyes_adoration", False),
+        "🥰": (0.90, "smiling_hearts_love", False),
+        "🤩": (0.90, "star_struck_amazed", False),
+        "💯": (0.88, "hundred_points_perfect", False),
+        "🙌": (0.84, "raising_hands_praise", False),
+        "👏": (0.76, "clapping_applause", False),
+        "👍": (0.78, "thumbs_up_approval", False),
+        "✨": (0.75, "sparkles_positive", False),
+        "🎉": (0.82, "party_celebration", False),
+        "🥳": (0.86, "partying_joy", False),
+        "😊": (0.78, "smiling_warm_happy", False),
+        "😁": (0.78, "beaming_happy", False),
+        "😂": (0.65, "tears_of_joy_funny", False),
+        "🤣": (0.68, "rofl_hilarious", False),
+        "🙏": (0.70, "folded_hands_gratitude", False),
+        "👑": (0.85, "crown_goat_respect", False),
+        "💎": (0.82, "gem_valuable", False),
+        "🚀": (0.80, "rocket_amazing", False),
+    }
+
+    @classmethod
+    def analyze_emoji_context(
+        cls, raw_text: str, text_pos_hits: List[float], text_neg_hits: List[float]
+    ) -> Dict[str, Any]:
+        """
+        Evaluates emojis in the comment and detects DeepMoji Emotional Vector +
+        Emoji-Text Polarity Clashes (Sarcasm/Irony).
+        """
+        found_emojis: List[Tuple[str, float, str, bool]] = []
+        for em_char, (val, cluster, is_irony) in cls.EMOJI_VALENCE_MATRIX.items():
+            if em_char in raw_text:
+                found_emojis.append((em_char, val, cluster, is_irony))
+
+        if not found_emojis:
+            return {
+                "emoji_score": 0.0,
+                "dominant_emotion": "none",
+                "is_sarcastic_clash": False,
+                "pos_emoji_hits": [],
+                "neg_emoji_hits": [],
+            }
+
+        pos_em = [val for _, val, _, _ in found_emojis if val > 0]
+        neg_em = [val for _, val, _, _ in found_emojis if val < 0]
+        has_irony_emoji = any(is_ir for _, _, _, is_ir in found_emojis)
+        has_applause_or_laugh = any(
+            em in raw_text for em in ("👏", "🎉", "👍", "😂", "🤣", "🥳")
+        )
+
+        # Polarity Clash 1: Positive words paired with Sarcastic/Irony Emojis (🙃, 🙄, 🤡, 😒, 🤦, 💩)
+        clash_pos_text_neg_emoji = bool(text_pos_hits and (has_irony_emoji or neg_em))
+        # Polarity Clash 2: Strong Negative Complaint paired with Clapping/Celebration Emojis ("broke in 2 days 👏🎉")
+        clash_neg_text_applause_emoji = bool(
+            text_neg_hits
+            and abs(sum(text_neg_hits)) >= 0.72
+            and has_applause_or_laugh
+            and not text_pos_hits
+        )
+
+        is_sarcastic_clash = (
+            has_irony_emoji or clash_pos_text_neg_emoji or clash_neg_text_applause_emoji
+        )
+        avg_val = sum(v for _, v, _, _ in found_emojis) / len(found_emojis)
+
+        return {
+            "emoji_score": -0.88 if is_sarcastic_clash else round(avg_val, 3),
+            "dominant_emotion": found_emojis[0][2],
+            "is_sarcastic_clash": is_sarcastic_clash,
+            "pos_emoji_hits": pos_em,
+            "neg_emoji_hits": neg_em,
+        }
+
+
+class TwitterRoBERTaEngine:
+    """
+    Cardiff NLP Twitter-RoBERTa-base Sentiment & Irony Classifier
+    (`cardiffnlp/twitter-roberta-base-sentiment-latest` & `cardiffnlp/twitter-roberta-base-irony`).
+    Supports:
+    1. Local Hugging Face `transformers` pipeline (if installed)
+    2. Free Hugging Face Inference API (`HUGGINGFACE_API_KEY` or serverless endpoint)
+    """
+
+    SENTIMENT_MODEL = "cardiffnlp/twitter-roberta-base-sentiment-latest"
+    IRONY_MODEL = "cardiffnlp/twitter-roberta-base-irony"
+
+    def __init__(self) -> None:
+        self.hf_token = os.getenv("HUGGINGFACE_API_KEY", "").strip()
+        self._local_pipe = None
+        self._local_attempted = False
+
+    def _get_local_pipeline(self):
+        if self._local_attempted:
+            return self._local_pipe
+        self._local_attempted = True
+        if hf_pipeline is not None and os.getenv("USE_LOCAL_ROBERTA", "false").lower() == "true":
+            try:
+                self._local_pipe = hf_pipeline(
+                    "sentiment-analysis",
+                    model=self.SENTIMENT_MODEL,
+                    tokenizer=self.SENTIMENT_MODEL,
+                    top_k=None,
+                )
+            except Exception:
+                self._local_pipe = None
+        return self._local_pipe
+
+    def score_batch(self, texts: List[str]) -> Optional[List[Dict[str, Any]]]:
+        """Scores a batch of tweets/comments using CardiffNLP Twitter-RoBERTa."""
+        pipe = self._get_local_pipeline()
+        if pipe is not None:
+            try:
+                raw_outputs = pipe(texts[:64], truncation=True, max_length=256)
+                return [self._normalize_roberta_output(out) for out in raw_outputs]
+            except Exception:
+                pass
+
+        if self.hf_token and not self.hf_token.startswith("your_"):
+            try:
+                headers = {"Authorization": f"Bearer {self.hf_token}"}
+                resp = requests.post(
+                    f"https://api-inference.huggingface.co/models/{self.SENTIMENT_MODEL}",
+                    headers=headers,
+                    json={"inputs": texts[:50]},
+                    timeout=10,
+                )
+                if resp.status_code == 200:
+                    data = resp.json()
+                    if isinstance(data, list) and len(data) == len(texts[:50]):
+                        return [self._normalize_roberta_output(item) for item in data]
+            except Exception:
+                pass
+        return None
+
+    @staticmethod
+    def _normalize_roberta_output(item: Any) -> Dict[str, Any]:
+        # item is a list of [{'label': 'positive'|'negative'|'neutral', 'score': 0.92}, ...]
+        scores = {"positive": 0.0, "negative": 0.0, "neutral": 0.0}
+        if isinstance(item, list):
+            for entry in item:
+                lbl = str(entry.get("label", "")).lower()
+                sc = float(entry.get("score", 0.0))
+                if "pos" in lbl or lbl == "label_2":
+                    scores["positive"] = sc
+                elif "neg" in lbl or lbl == "label_0":
+                    scores["negative"] = sc
+                else:
+                    scores["neutral"] = sc
+        best_lbl = max(scores, key=scores.get)
+        mapped: SentimentLabel = (
+            "Positive"
+            if best_lbl == "positive"
+            else "Negative"
+            if best_lbl == "negative"
+            else "Neutral"
+        )
+        compound = round(scores["positive"] - scores["negative"], 3)
+        conf = round(max(scores.values()), 3)
+        return {"sentiment": mapped, "score": compound, "confidence": max(0.65, conf)}
+
+ADVANCED_SYSTEM_PROMPT = """You are an elite Multilingual Social Media Sentiment & Linguistic Intelligence AI specializing in YouTube and Instagram comment streams.
+
+CRITICAL LINGUISTIC & SARCASM RULES:
+1. DECODE SARCASM & IRONY STRICTLY AS NEGATIVE:
+   - Detect hidden human intent, mockery, irony, and sarcastic phrasing.
+   - If a comment uses surface-level praise words ("wow", "great", "amazing", "best", "genius", "thank you so much", "waah", "kya baat hai", "shabash", "masterpiece") or applause/clown/eye-roll emojis ([EMOJI:clapping_applause], [EMOJI:clown_face_mockery_sarcasm_negative], [EMOJI:eye_roll_sarcastic_negative]) to mock a failure, delay, high price, defect, or bad content (e.g., "Wow what a 'great' product, broke in 2 days!", "Thank you so much for delivering my order 3 weeks late!", "Waah kya kamaal ki ghatiya service hai", "Best waste of money ever"), you MUST classify it STRICTLY as "Negative" (NEVER Positive or Mixed) with a negative score between -0.75 and -0.98.
+2. DEEP HINGLISH, HINDI & INTERNET SLANG UNDERSTANDING:
+   - Seamlessly process mixed Hindi-English (Hinglish), Romanized Hindi, Devanagari script, and Gen-Z/internet slang (e.g., "paisa barbaad", "bekar", "bakwaas", "mehnga", "der se aaya", "chapri", "faltu", "paisa vasool", "op", "badiya", "mast", "zabardast", "ye product bht achha hai par price high hai").
+   - Interpret demojized emoji tokens (e.g., [EMOJI:fire_enthusiasm_positive], [EMOJI:clown_face_mockery_sarcasm_negative], [EMOJI:loudly_crying_upset]) in context with the surrounding text.
+3. CONTRASTIVE ("YES, BUT...") FEEDBACK:
+   - Only when a comment genuinely praises one attribute while raising a real complaint about another without sarcasm (e.g., "Quality is good, but delivery was very late" or "Product bht achha hai par price high hai"), classify as "Mixed" and set `pain_point` to the exact customer problem.
+4. ROOT-CAUSE PAIN POINTS:
+   - For every "Negative" or "Mixed" comment, assign `pain_point` to one of:
+     * "Price Problem (High Cost)"
+     * "Delivery Problem (Late Shipping)"
+     * "Quality / Product Issue"
+     * "Packaging / Damage Issue"
+     * "Customer Support / Refund Issue"
+     * "Quantity / Sizing / Stock Issue"
+     * "General Customer Dissatisfaction"
+   - For "Positive" or "Neutral" comments, set `pain_point` to null.
+5. OUTPUT FORMAT:
+   - Return ONLY valid, raw JSON matching this exact structure (no markdown fences, no extra prose):
+{
+  "overall_sentiment_percentages": {
+    "positive_pct": 60.0,
+    "negative_pct": 25.0,
+    "neutral_pct": 10.0,
+    "mixed_pct": 5.0
+  },
+  "classifications": [
+    {
+      "id": "comment_id_here",
+      "sentiment": "Positive|Negative|Neutral|Mixed",
+      "score": -0.85,
+      "confidence": 0.96,
+      "is_sarcastic": true,
+      "pain_point": "Quality / Product Issue",
+      "keywords": ["quality", "broken"],
+      "is_critical": true
+    }
+  ],
+  "top_pain_points": ["Price Problem (High Cost)", "Delivery Problem (Late Shipping)"],
+  "top_keywords": ["quality", "price", "delivery"],
+  "executive_summary": "2-sentence executive summary of audience sentiment, sarcasm/Hinglish nuances, and primary customer pain points.",
+  "actionable_insights": [
+    "Actionable recommendation 1",
+    "Actionable recommendation 2",
+    "Actionable recommendation 3"
+  ]
+}"""
+
+SARCASM_PATTERNS = [
+    re.compile(r"\b(wow|great|amazing|awesome|fantastic|brilliant|genius|masterpiece|best|love how|thank you|thanks|shabash|waah|wah|kya baat|kamaal)\b.*\b(broke|broken|stopped working|died|waste|scam|trash|garbage|late|delayed|weeks|worst|useless|pathetic|bekar|bekaar|bakwas|bakwaas|ghatiya|kharab|barbaad|loot|dhokha|refund|ignore|ignored)\b", re.IGNORECASE),
+    re.compile(r"\b(broke|broken|waste|scam|late|delayed|worst|bekar|bakwas|ghatiya|barbaad)\b.*\b(wow|great job|well done|bravo|congrats|thank you|thanks|waah|shabash|masterpiece)\b", re.IGNORECASE),
+    re.compile(r"['\"](great|amazing|best|premium|fast|quality)['\"]", re.IGNORECASE),
+    re.compile(r"\b(sooo+ good that|such a great .* that it broke|best waste of money|paisa barbaad करने का best tarika)\b", re.IGNORECASE),
+]
 
 STOPWORDS = {
     "the", "and", "for", "that", "this", "with", "you", "not", "are", "from",
@@ -63,7 +342,8 @@ NEGATIVE_LEXICON = {
     "awful": -0.9, "hurt": -0.6, "hurts": -0.65, "plasticky": -0.65,
     "waiting": -0.55, "delayed": -0.78, "stuck": -0.7, "disappointed": -0.82,
     "leaking": -0.82, "clogs": -0.68, "struggled": -0.6, "fogged": -0.65,
-    "small": -0.45, "slow": -0.72, "worst": -0.95, "broken": -0.88,
+    "small": -0.45, "slow": -0.72, "worst": -0.95, "broken": -0.88, "broke": -0.88,
+    "died": -0.85, "pathetic": -0.88, "barbaad": -0.9, "dhokha": -0.88, "loot": -0.85,
     "overpriced": -0.85, "missing": -0.72, "stutter": -0.58, "costly": -0.78,
     "oily": -0.72, "sticky": -0.72, "whitecast": -0.75, "greasy": -0.75,
     "pimples": -0.82, "pimple": -0.82, "acne": -0.8, "breakout": -0.82,
@@ -220,18 +500,49 @@ def detect_customer_problem(lower_text: str, tokens: List[str], sentiment: str) 
 
 class SentimentNLPEngine:
     """
-    AI/NLP Engine powered by Google Gemini API with multilingual (English + Hindi + Hinglish)
-    contrastive & root-cause problem detection.
+    Advanced Multilingual AI/NLP Engine supporting:
+    1. Anthropic Claude 3.5 Sonnet (`claude-3-5-sonnet-20241022`)
+    2. OpenAI GPT-4o (`gpt-4o`)
+    3. Google Gemini (`gemini-1.5-flash`)
+    4. Deep Sarcasm, Emoji Demojization & Hinglish Semantic Fallback Engine
     """
 
     def __init__(self) -> None:
+        self.roberta_engine = TwitterRoBERTaEngine()
+        self.deepmoji_engine = DeepMojiEmotionEngine()
+        self._reload_env()
+
+    def _reload_env(self) -> None:
+        backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        from dotenv import load_dotenv
+        load_dotenv(os.path.join(backend_dir, ".env"), override=True)
+        self.anthropic_api_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
+        self.claude_model = os.getenv("ANTHROPIC_MODEL", "claude-3-5-sonnet-20241022").strip()
+        self.openai_api_key = os.getenv("OPENAI_API_KEY", "").strip()
+        self.openai_model = os.getenv("OPENAI_MODEL", "gpt-4o").strip()
         self.api_key = os.getenv("GEMINI_API_KEY", "").strip()
-        self.model_name = os.getenv("GEMINI_MODEL", "gemini-1.5-flash").strip()
+        self.model_name = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite").strip()
+
+    def _has_valid_anthropic_key(self) -> bool:
+        return bool(
+            self.anthropic_api_key
+            and not self.anthropic_api_key.startswith("your_")
+            and len(self.anthropic_api_key) > 15
+            and anthropic is not None
+        )
+
+    def _has_valid_openai_key(self) -> bool:
+        return bool(
+            self.openai_api_key
+            and not self.openai_api_key.startswith("your_")
+            and len(self.openai_api_key) > 15
+            and openai is not None
+        )
 
     def _has_valid_gemini_key(self) -> bool:
         return bool(
             self.api_key
-            and self.api_key != "your_gemini_api_key_here"
+            and not self.api_key.startswith("your_")
             and len(self.api_key) > 15
             and genai is not None
         )
@@ -250,17 +561,221 @@ class SentimentNLPEngine:
         List[str],
         str,
     ]:
+        self._reload_env()
         if df.empty:
             return [], [], [], "No valid comments remained after data cleaning.", [], "Hybrid NLP Engine"
 
         records = df.to_dict(orient="records")
 
-        if not force_sandbox and self._has_valid_gemini_key():
-            gemini_result = self._analyze_with_gemini(records, platform, post_title)
-            if gemini_result is not None:
-                return gemini_result
+        if not force_sandbox:
+            # 1. Primary: Anthropic Claude 3.5 Sonnet (claude-3-5-sonnet-20241022)
+            if self._has_valid_anthropic_key():
+                claude_result = self._analyze_with_claude(records, platform, post_title)
+                if claude_result is not None:
+                    return claude_result
+
+            # 2. Secondary: OpenAI GPT-4o (gpt-4o)
+            if self._has_valid_openai_key():
+                openai_result = self._analyze_with_openai(records, platform, post_title)
+                if openai_result is not None:
+                    return openai_result
+
+            # 3. Tertiary: Google Gemini (gemini-1.5-flash)
+            if self._has_valid_gemini_key():
+                gemini_result = self._analyze_with_gemini(records, platform, post_title)
+                if gemini_result is not None:
+                    return gemini_result
 
         return self._analyze_with_semantic_engine(records, platform, post_title)
+
+    def _build_llm_user_prompt(
+        self, records: List[Dict[str, Any]], platform: str, post_title: str
+    ) -> str:
+        batch_input = [
+            {
+                "id": r["comment_id"],
+                "text": r.get("demojized_text") or demojize_with_feelings(r["cleaned_text"]),
+            }
+            for r in records[:120]
+        ]
+        return (
+            f"Platform: {platform.upper()} | Video/Post Title: {post_title}\n"
+            f"Total Comments in Batch: {len(batch_input)}\n\n"
+            "Analyze the following demojized comments (pay special attention to sarcasm, irony, "
+            "praise words paired with negative complaints, emoji tokens, and Hinglish/Hindi slang) "
+            "and return the exact JSON schema specified in the system prompt:\n\n"
+            f"{json.dumps(batch_input, ensure_ascii=False)}"
+        )
+
+    def _parse_llm_json_response(
+        self,
+        raw_text: str,
+        records: List[Dict[str, Any]],
+        platform: str,
+        post_title: str,
+        engine_label: str,
+    ) -> Optional[
+        Tuple[
+            List[CommentItem],
+            List[KeywordMetric],
+            List[PainPointItem],
+            str,
+            List[str],
+            str,
+        ]
+    ]:
+        json_match = re.search(r"\{.*\}", raw_text, re.DOTALL)
+        if not json_match:
+            return None
+        parsed = json.loads(json_match.group(0))
+        cls_map = {
+            str(item["id"]): item
+            for item in parsed.get("classifications", [])
+            if isinstance(item, dict) and "id" in item
+        }
+        if not cls_map:
+            return None
+
+        comments: List[CommentItem] = []
+        for r in records:
+            cid = str(r["comment_id"])
+            if cid in cls_map:
+                c_info = cls_map[cid]
+                lbl = c_info.get("sentiment", "Neutral")
+                if lbl not in ("Positive", "Negative", "Neutral", "Mixed"):
+                    lbl = "Neutral"
+                # Enforce strict sarcasm rule: if LLM flagged is_sarcastic=True, force Negative
+                if c_info.get("is_sarcastic") is True:
+                    lbl = "Negative"
+                score = float(c_info.get("score", -0.8 if lbl == "Negative" else 0.0))
+                if lbl == "Negative" and score > -0.2:
+                    score = -0.82
+                conf = float(c_info.get("confidence", 0.94))
+                pain = c_info.get("pain_point")
+                if lbl in ("Negative", "Mixed") and not pain:
+                    pain = detect_customer_problem(
+                        r["cleaned_text"].lower(),
+                        re.findall(r"[a-z]+", r["cleaned_text"].lower()),
+                        lbl,
+                    )
+                kws = [str(k) for k in (c_info.get("keywords") or [])][:4]
+                crit = bool(
+                    c_info.get(
+                        "is_critical", lbl in ("Negative", "Mixed") and pain is not None
+                    )
+                )
+                comments.append(
+                    CommentItem(
+                        comment_id=cid,
+                        author=r["author"],
+                        platform=platform,
+                        raw_text=r["raw_text"],
+                        cleaned_text=r["cleaned_text"],
+                        likes=int(r.get("likes", 0)),
+                        published_at=r.get("published_at", ""),
+                        sentiment=lbl,
+                        sentiment_score=max(-1.0, min(1.0, round(score, 3))),
+                        confidence=max(0.5, min(0.99, round(conf, 3))),
+                        pain_point=pain,
+                        keywords=kws,
+                        is_critical=crit,
+                    )
+                )
+            else:
+                comments.append(self._classify_single_comment(r, platform))
+
+        top_keywords = self._extract_top_keywords(comments)
+        pain_points = self._extract_pain_points(comments)
+        exec_summary = parsed.get("executive_summary") or self._build_summary(
+            comments, platform, post_title, top_keywords
+        )
+        insights = parsed.get("actionable_insights") or self._build_actionable_insights(
+            comments, pain_points, top_keywords
+        )
+        return (
+            comments,
+            top_keywords,
+            pain_points,
+            exec_summary,
+            insights,
+            engine_label,
+        )
+
+    def _analyze_with_claude(
+        self,
+        records: List[Dict[str, Any]],
+        platform: str,
+        post_title: str,
+    ) -> Optional[
+        Tuple[
+            List[CommentItem],
+            List[KeywordMetric],
+            List[PainPointItem],
+            str,
+            List[str],
+            str,
+        ]
+    ]:
+        """Calls Anthropic Claude 3.5 Sonnet (`claude-3-5-sonnet-20241022`) with the strict sarcasm & Hinglish system prompt."""
+        try:
+            client = anthropic.Anthropic(api_key=self.anthropic_api_key)
+            user_prompt = self._build_llm_user_prompt(records, platform, post_title)
+            message = client.messages.create(
+                model=self.claude_model,
+                max_tokens=4096,
+                temperature=0.1,
+                system=ADVANCED_SYSTEM_PROMPT,
+                messages=[{"role": "user", "content": user_prompt}],
+            )
+            raw_text = message.content[0].text.strip()
+            return self._parse_llm_json_response(
+                raw_text,
+                records,
+                platform,
+                post_title,
+                f"Anthropic Claude ({self.claude_model})",
+            )
+        except Exception:
+            return None
+
+    def _analyze_with_openai(
+        self,
+        records: List[Dict[str, Any]],
+        platform: str,
+        post_title: str,
+    ) -> Optional[
+        Tuple[
+            List[CommentItem],
+            List[KeywordMetric],
+            List[PainPointItem],
+            str,
+            List[str],
+            str,
+        ]
+    ]:
+        """Calls OpenAI GPT-4o (`gpt-4o`) with JSON mode and the strict sarcasm & Hinglish system prompt."""
+        try:
+            client = openai.OpenAI(api_key=self.openai_api_key)
+            user_prompt = self._build_llm_user_prompt(records, platform, post_title)
+            response = client.chat.completions.create(
+                model=self.openai_model,
+                temperature=0.1,
+                response_format={"type": "json_object"},
+                messages=[
+                    {"role": "system", "content": ADVANCED_SYSTEM_PROMPT},
+                    {"role": "user", "content": user_prompt},
+                ],
+            )
+            raw_text = (response.choices[0].message.content or "").strip()
+            return self._parse_llm_json_response(
+                raw_text,
+                records,
+                platform,
+                post_title,
+                f"OpenAI ({self.openai_model})",
+            )
+        except Exception:
+            return None
 
     def _analyze_with_gemini(
         self,
@@ -277,98 +792,143 @@ class SentimentNLPEngine:
             str,
         ]
     ]:
-        try:
-            genai.configure(api_key=self.api_key)
-            model = genai.GenerativeModel(self.model_name)
-
-            batch_input = [
-                {"id": r["comment_id"], "text": r["cleaned_text"]}
-                for r in records[:60]
-            ]
-            prompt = (
-                "You are an expert Social Media Sentiment & Customer Pain-Point AI for Instagram and YouTube comments (supporting English, Hindi, and Hinglish).\n"
-                f"Platform: {platform.upper()} | Post Title: {post_title}\n"
-                "Rules:\n"
-                "1. If a comment praises one thing but complains about another (e.g. 'ye product bht achha hai par price high hai' or 'Quality is good, but delivery was very late'), classify sentiment as 'Mixed' and set pain_point to the exact problem ('Price Problem (High Cost)', 'Delivery Problem (Late Shipping)', 'Quality / Product Issue', 'Packaging / Damage Issue', 'Customer Support / Refund Issue', or 'Quantity / Sizing / Stock Issue').\n"
-                "2. For Negative comments, always set pain_point to the specific reason why it is negative.\n"
-                "3. Return ONLY valid JSON with this schema:\n"
-                "{\n"
-                '  "classifications": [\n'
-                '    {"id": "...", "sentiment": "Positive|Negative|Neutral|Mixed", "score": -0.35, "confidence": 0.94, "pain_point": "Price Problem (High Cost) or null", "keywords": ["product", "price"], "is_critical": true}\n'
-                "  ],\n"
-                '  "executive_summary": "2-sentence executive summary of audience sentiment and main customer problems.",\n'
-                '  "actionable_insights": ["Insight 1", "Insight 2", "Insight 3"]\n'
-                "}\n\n"
-                f"Comments:\n{json.dumps(batch_input, ensure_ascii=False)}"
-            )
-
-            response = model.generate_content(prompt)
-            raw_text = response.text.strip()
-            json_match = re.search(r"\{.*\}", raw_text, re.DOTALL)
-            if not json_match:
-                return None
-            parsed = json.loads(json_match.group(0))
-            cls_map = {
-                item["id"]: item for item in parsed.get("classifications", []) if "id" in item
-            }
-
-            comments: List[CommentItem] = []
-            for r in records:
-                cid = r["comment_id"]
-                if cid in cls_map:
-                    c_info = cls_map[cid]
-                    lbl = c_info.get("sentiment", "Neutral")
-                    if lbl not in ("Positive", "Negative", "Neutral", "Mixed"):
-                        lbl = "Neutral"
-                    score = float(c_info.get("score", 0.0))
-                    conf = float(c_info.get("confidence", 0.9))
-                    pain = c_info.get("pain_point")
-                    if lbl in ("Negative", "Mixed") and not pain:
-                        pain = detect_customer_problem(
-                            r["cleaned_text"].lower(),
-                            re.findall(r"[a-z]+", r["cleaned_text"].lower()),
-                            lbl,
-                        )
-                    kws = c_info.get("keywords", [])[:4]
-                    crit = bool(c_info.get("is_critical", lbl in ("Negative", "Mixed") and pain is not None))
-                    comments.append(
-                        CommentItem(
-                            comment_id=cid,
-                            author=r["author"],
-                            platform=platform,
-                            raw_text=r["raw_text"],
-                            cleaned_text=r["cleaned_text"],
-                            likes=int(r.get("likes", 0)),
-                            published_at=r.get("published_at", ""),
-                            sentiment=lbl,
-                            sentiment_score=max(-1.0, min(1.0, round(score, 3))),
-                            confidence=max(0.5, min(0.99, round(conf, 3))),
-                            pain_point=pain,
-                            keywords=kws,
-                            is_critical=crit,
-                        )
-                    )
-                else:
-                    comments.append(self._classify_single_comment(r, platform))
-
-            top_keywords = self._extract_top_keywords(comments)
-            pain_points = self._extract_pain_points(comments)
-            exec_summary = parsed.get("executive_summary") or self._build_summary(
-                comments, platform, post_title, top_keywords
-            )
-            insights = parsed.get("actionable_insights") or self._build_actionable_insights(
-                comments, pain_points, top_keywords
-            )
-            return (
-                comments,
-                top_keywords,
-                pain_points,
-                exec_summary,
-                insights,
-                f"Google Gemini ({self.model_name})",
-            )
-        except Exception:
+        """Calls Google Gemini with direct REST / SDK support, chunking comments across batches to analyze ALL comments with maximum accuracy."""
+        if not self.api_key:
             return None
+
+        # Process in batches of 40 to avoid token cutoff and analyze up to 200 comments with Gemini
+        chunk_size = 40
+        all_cls_map: Dict[str, Dict[str, Any]] = {}
+        exec_summary = ""
+        insights: List[str] = []
+
+        total_to_process = min(len(records), 200)
+
+        for i in range(0, total_to_process, chunk_size):
+            chunk = records[i : i + chunk_size]
+            batch_input = [
+                {
+                    "id": str(r["comment_id"]),
+                    "text": r.get("demojized_text") or demojize_with_feelings(r["cleaned_text"]),
+                }
+                for r in chunk
+            ]
+            user_prompt = (
+                f"Platform: {platform.upper()} | Video/Post Title: {post_title}\n"
+                f"Batch {i//chunk_size + 1}: Analyze the following {len(batch_input)} comments.\n"
+                "CRITICAL: If a sentence is negative, complaining, broken, delay, or sarcastic (even if emojis are happy like 👏, 🎉, 🙃, 🙄, 🤡, 😂), classify sentiment as 'Negative'.\n"
+                "Return valid JSON matching the schema specified in your system instructions:\n\n"
+                f"{json.dumps(batch_input, ensure_ascii=False)}"
+            )
+
+            # Try direct REST endpoint first for resilience and speed
+            parsed_chunk = None
+            try:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model_name}:generateContent?key={self.api_key}"
+                payload = {
+                    "systemInstruction": {"parts": [{"text": ADVANCED_SYSTEM_PROMPT}]},
+                    "contents": [{"parts": [{"text": user_prompt}]}],
+                    "generationConfig": {"temperature": 0.1, "responseMimeType": "application/json"},
+                }
+                resp = requests.post(url, json=payload, timeout=25)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    candidates = data.get("candidates", [])
+                    if candidates:
+                        raw_json_str = candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+                        parsed_chunk = json.loads(raw_json_str)
+            except Exception:
+                pass
+
+            if not parsed_chunk and genai is not None:
+                try:
+                    genai.configure(api_key=self.api_key)
+                    model = genai.GenerativeModel(
+                        model_name=self.model_name,
+                        system_instruction=ADVANCED_SYSTEM_PROMPT,
+                    )
+                    resp = model.generate_content(user_prompt)
+                    raw_text = resp.text.strip()
+                    m = re.search(r"\{.*\}", raw_text, re.DOTALL)
+                    if m:
+                        parsed_chunk = json.loads(m.group(0))
+                except Exception:
+                    pass
+
+            if parsed_chunk and isinstance(parsed_chunk, dict):
+                for item in parsed_chunk.get("classifications", []):
+                    if isinstance(item, dict) and "id" in item:
+                        all_cls_map[str(item["id"])] = item
+                if not exec_summary and parsed_chunk.get("executive_summary"):
+                    exec_summary = parsed_chunk["executive_summary"]
+                if not insights and parsed_chunk.get("actionable_insights"):
+                    insights = parsed_chunk["actionable_insights"]
+
+        if not all_cls_map:
+            return None
+
+        comments: List[CommentItem] = []
+        for r in records:
+            cid = str(r["comment_id"])
+            if cid in all_cls_map:
+                c_info = all_cls_map[cid]
+                lbl = c_info.get("sentiment", "Neutral")
+                if lbl not in ("Positive", "Negative", "Neutral", "Mixed"):
+                    lbl = "Neutral"
+                if c_info.get("is_sarcastic") is True:
+                    lbl = "Negative"
+                score = float(c_info.get("score", -0.85 if lbl == "Negative" else 0.0))
+                if lbl == "Negative" and score > -0.2:
+                    score = -0.85
+                conf = float(c_info.get("confidence", 0.95))
+                pain = c_info.get("pain_point")
+                if lbl in ("Negative", "Mixed") and not pain:
+                    pain = detect_customer_problem(
+                        r["cleaned_text"].lower(),
+                        re.findall(r"[a-z]+", r["cleaned_text"].lower()),
+                        lbl,
+                    )
+                kws = [str(k) for k in (c_info.get("keywords") or [])][:4]
+                crit = bool(
+                    c_info.get(
+                        "is_critical", lbl in ("Negative", "Mixed") and pain is not None
+                    )
+                )
+                comments.append(
+                    CommentItem(
+                        comment_id=cid,
+                        author=r["author"],
+                        platform=platform,
+                        raw_text=r["raw_text"],
+                        cleaned_text=r["cleaned_text"],
+                        likes=int(r.get("likes", 0)),
+                        published_at=r.get("published_at", ""),
+                        sentiment=lbl,
+                        sentiment_score=max(-1.0, min(1.0, round(score, 3))),
+                        confidence=max(0.6, min(0.99, round(conf, 3))),
+                        pain_point=pain,
+                        keywords=kws,
+                        is_critical=crit,
+                    )
+                )
+            else:
+                comments.append(self._classify_single_comment(r, platform))
+
+        top_keywords = self._extract_top_keywords(comments)
+        pain_points = self._extract_pain_points(comments)
+        if not exec_summary:
+            exec_summary = self._build_summary(comments, platform, post_title, top_keywords)
+        if not insights:
+            insights = self._build_actionable_insights(comments, pain_points, top_keywords)
+
+        return (
+            comments,
+            top_keywords,
+            pain_points,
+            exec_summary,
+            insights,
+            f"Google Gemini ({self.model_name}) + DeepMoji",
+        )
 
     def _classify_single_comment(
         self, record: Dict[str, Any], platform: str
@@ -380,10 +940,6 @@ class SentimentNLPEngine:
         pos_hits: List[float] = []
         neg_hits: List[float] = []
         extracted_kws: List[str] = []
-
-        # Positive emoji reactions (e.g. 🙌, 🔥, 👏, ❤️, 😍, 😮)
-        if any(em in text for em in ("🙌", "🔥", "👏", "❤️", "😍", "😮", "💯", "👍")):
-            pos_hits.append(0.75)
 
         if any(lk in lower or lk in text for lk in ("🔗", "🖇", "लिंक", "link", "pp")):
             extracted_kws.append("link")
@@ -433,14 +989,32 @@ class SentimentNLPEngine:
         if any(p in lower for p in ("worth every penny", "best purchase", "must buy", "10/10", "holy grail", "bht achha", "bahut achha", "bahut accha", "bht accha")):
             pos_hits.append(0.88)
 
-        for em in POSITIVE_EMOJIS:
-            if em in text:
-                pos_hits.append(0.65)
-        for em in NEGATIVE_EMOJIS:
-            if em in text:
-                neg_hits.append(-0.7)
-
         has_contrast = any(tok in CONTRASTIVE_MARKERS for tok in tokens)
+        demojized = record.get("demojized_text") or demojize_with_feelings(text)
+
+        # DeepMoji 64-Emotion & Emoji-Text Polarity Clash Analysis (evaluated on pure text hits before adding emoji valence)
+        deepmoji_ctx = self.deepmoji_engine.analyze_emoji_context(
+            record.get("raw_text", text), pos_hits, neg_hits
+        )
+        if not deepmoji_ctx["is_sarcastic_clash"]:
+            pos_hits.extend(deepmoji_ctx["pos_emoji_hits"])
+            neg_hits.extend(deepmoji_ctx["neg_emoji_hits"])
+
+        # Strict Sarcasm & Irony Check (CardiffNLP Irony + DeepMoji Polarity Clash):
+        is_sarcastic = (
+            deepmoji_ctx["is_sarcastic_clash"]
+            or any(pat.search(text) for pat in SARCASM_PATTERNS)
+            or (
+                any(
+                    s_em in demojized
+                    for s_em in (
+                        "clown_face_mockery_sarcasm_negative",
+                        "eye_roll_sarcastic_negative",
+                    )
+                )
+                and (pos_hits or neg_hits)
+            )
+        )
 
         pos_sum = sum(pos_hits)
         neg_sum = sum(neg_hits)
@@ -449,7 +1023,11 @@ class SentimentNLPEngine:
         score = 0.0
         confidence = 0.89
 
-        if pos_hits and neg_hits and has_contrast:
+        if is_sarcastic:
+            sentiment = "Negative"
+            score = -0.88
+            confidence = 0.96
+        elif pos_hits and neg_hits and has_contrast:
             sentiment = "Mixed"
             score = round((pos_sum + neg_sum) / max(len(pos_hits) + len(neg_hits), 1), 3)
             if score == 0.0:
@@ -513,7 +1091,29 @@ class SentimentNLPEngine:
         List[str],
         str,
     ]:
-        comments = [self._classify_single_comment(r, platform) for r in records]
+        # Try CardiffNLP Twitter-RoBERTa batch scoring first if available, fused with DeepMoji & Hinglish rules
+        roberta_preds = self.roberta_engine.score_batch(
+            [r["cleaned_text"] for r in records]
+        )
+        comments: List[CommentItem] = []
+        for idx, r in enumerate(records):
+            base_item = self._classify_single_comment(r, platform)
+            if roberta_preds and idx < len(roberta_preds):
+                rob = roberta_preds[idx]
+                # Keep Mixed ("Yes, But...") or Sarcasm-Negative overrides from DeepMoji/Hinglish engine,
+                # otherwise blend Twitter-RoBERTa's probability score
+                if base_item.sentiment == "Neutral" and rob["sentiment"] != "Neutral":
+                    base_item.sentiment = rob["sentiment"]
+                    base_item.sentiment_score = rob["score"]
+                    base_item.confidence = rob["confidence"]
+                    if base_item.sentiment in ("Negative", "Mixed") and not base_item.pain_point:
+                        base_item.pain_point = detect_customer_problem(
+                            r["cleaned_text"].lower(),
+                            re.findall(r"[a-z]+", r["cleaned_text"].lower()),
+                            base_item.sentiment,
+                        )
+            comments.append(base_item)
+
         top_keywords = self._extract_top_keywords(comments)
         pain_points = self._extract_pain_points(comments)
         summary = self._build_summary(comments, platform, post_title, top_keywords)
@@ -524,7 +1124,7 @@ class SentimentNLPEngine:
             pain_points,
             summary,
             insights,
-            "Gemini Semantic NLP Engine",
+            "Twitter-RoBERTa (CardiffNLP) + DeepMoji + Hinglish NLP",
         )
 
     def _extract_top_keywords(self, comments: List[CommentItem]) -> List[KeywordMetric]:

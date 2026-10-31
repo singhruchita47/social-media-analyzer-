@@ -178,7 +178,7 @@ class SocialCommentFetcher:
         post_url: str,
         post_title: Optional[str] = None,
         custom_comments: Optional[List[str]] = None,
-        max_comments: int = 120,
+        max_comments: int = 500,
         force_sandbox: bool = False,
     ) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
         """
@@ -274,41 +274,62 @@ class SocialCommentFetcher:
                 except Exception:
                     pass
 
-            # Fetch comment threads
-            comments_resp = requests.get(
-                "https://www.googleapis.com/youtube/v3/commentThreads",
-                params={
+            # Full Comment Pagination (100+ comments) using while-loop and nextPageToken
+            raw_comments: List[Dict[str, Any]] = []
+            next_page_token: Optional[str] = None
+            target_limit = max(100, max_comments)
+
+            while len(raw_comments) < target_limit:
+                page_size = min(100, target_limit - len(raw_comments))
+                params: Dict[str, Any] = {
                     "part": "snippet",
                     "videoId": video_id,
-                    "maxResults": min(max_comments, 100),
+                    "maxResults": page_size,
                     "order": "relevance",
                     "textFormat": "plainText",
                     "key": self.youtube_api_key,
-                },
-                timeout=10,
-            )
-            if comments_resp.status_code != 200:
-                return None
+                }
+                if next_page_token:
+                    params["pageToken"] = next_page_token
 
-            data = comments_resp.json()
-            items = data.get("items", [])
-            if not items:
-                return None
-
-            raw_comments: List[Dict[str, Any]] = []
-            for idx, item in enumerate(items):
-                top = item.get("snippet", {}).get("topLevelComment", {}).get("snippet", {})
-                raw_comments.append(
-                    {
-                        "comment_id": item.get("id", f"yt_live_{idx}"),
-                        "author": top.get("authorDisplayName", f"@yt_user_{idx}"),
-                        "raw_text": top.get("textDisplay", ""),
-                        "likes": int(top.get("likeCount", 0)),
-                        "published_at": top.get(
-                            "publishedAt", datetime.utcnow().isoformat() + "Z"
-                        ),
-                    }
+                comments_resp = requests.get(
+                    "https://www.googleapis.com/youtube/v3/commentThreads",
+                    params=params,
+                    timeout=12,
                 )
+                if comments_resp.status_code != 200:
+                    break
+
+                data = comments_resp.json()
+                items = data.get("items", [])
+                if not items:
+                    break
+
+                for item in items:
+                    idx = len(raw_comments)
+                    top = (
+                        item.get("snippet", {})
+                        .get("topLevelComment", {})
+                        .get("snippet", {})
+                    )
+                    raw_comments.append(
+                        {
+                            "comment_id": item.get("id", f"yt_live_{idx}"),
+                            "author": top.get("authorDisplayName", f"@yt_user_{idx}"),
+                            "raw_text": top.get("textDisplay", ""),
+                            "likes": int(top.get("likeCount", 0)),
+                            "published_at": top.get(
+                                "publishedAt", datetime.utcnow().isoformat() + "Z"
+                            ),
+                        }
+                    )
+
+                next_page_token = data.get("nextPageToken")
+                if not next_page_token:
+                    break
+
+            if not raw_comments:
+                return None
 
             metadata = {
                 "platform": "youtube",
@@ -320,7 +341,7 @@ class SocialCommentFetcher:
                 "post_reach": int(round(view_count * 0.82)) if view_count > 0 else 0,
                 "author_followers": subscriber_count,
                 "video_like_count": video_like_count,
-                "source_mode": "YouTube Data API v3 (Live)",
+                "source_mode": "YouTube Data API v3 (Live Paginated)",
             }
             return metadata, raw_comments
         except Exception:
@@ -471,80 +492,94 @@ class SocialCommentFetcher:
             except Exception:
                 pass
 
-        # Step C: Fetch Real Post/Reel Comments from RapidAPI get_post_comments.php
+        # Step C: Fetch Real Post/Reel Comments from RapidAPI get_post_comments.php with pagination support
         raw_comments: List[Dict[str, Any]] = []
-        try:
-            c_resp = requests.get(
-                f"https://{self.rapidapi_host}/get_post_comments.php",
-                params={"media_code": media_code, "sort_order": "popular"},
-                headers=headers,
-                timeout=25,
-            )
-            if c_resp.status_code != 200:
-                c_resp = requests.post(
+        pagination_token: Optional[str] = None
+        target_ig_limit = max(100, max_comments)
+
+        for _ in range(5):  # Paginate up to 5 batches if post has many comments
+            try:
+                params: Dict[str, Any] = {"media_code": media_code, "sort_order": "popular"}
+                if pagination_token:
+                    params["pagination_token"] = pagination_token
+
+                c_resp = requests.get(
                     f"https://{self.rapidapi_host}/get_post_comments.php",
-                    data={"media_code": media_code, "sort_order": "popular"},
+                    params=params,
                     headers=headers,
                     timeout=25,
                 )
+                if c_resp.status_code != 200:
+                    c_resp = requests.post(
+                        f"https://{self.rapidapi_host}/get_post_comments.php",
+                        data=params,
+                        headers=headers,
+                        timeout=25,
+                    )
 
-            if c_resp.status_code == 200:
-                c_json = c_resp.json()
-                comment_list = []
-                if isinstance(c_json, list):
-                    comment_list = c_json
-                elif isinstance(c_json, dict):
-                    if isinstance(c_json.get("comments"), list):
-                        comment_list = c_json["comments"]
-                    elif isinstance(c_json.get("data"), dict) and isinstance(
-                        c_json["data"].get("comments"), list
-                    ):
-                        comment_list = c_json["data"]["comments"]
-                    elif isinstance(c_json.get("data"), list):
-                        comment_list = c_json["data"]
-                    elif isinstance(c_json.get("items"), list):
-                        comment_list = c_json["items"]
-                    else:
-                        comment_list = (
-                            c_json.get("edge_media_to_parent_comment", {}).get("edges", [])
-                            or []
+                if c_resp.status_code == 200:
+                    c_json = c_resp.json()
+                    comment_list = []
+                    if isinstance(c_json, list):
+                        comment_list = c_json
+                    elif isinstance(c_json, dict):
+                        pagination_token = c_json.get("pagination_token") or c_json.get("next_max_id")
+                        if isinstance(c_json.get("comments"), list):
+                            comment_list = c_json["comments"]
+                        elif isinstance(c_json.get("data"), dict) and isinstance(
+                            c_json["data"].get("comments"), list
+                        ):
+                            comment_list = c_json["data"]["comments"]
+                        elif isinstance(c_json.get("data"), list):
+                            comment_list = c_json["data"]
+                        elif isinstance(c_json.get("items"), list):
+                            comment_list = c_json["items"]
+                        else:
+                            comment_list = (
+                                c_json.get("edge_media_to_parent_comment", {}).get("edges", [])
+                                or []
+                            )
+
+                    for idx, item in enumerate(comment_list or []):
+                        node = item.get("node", item) if isinstance(item, dict) else {}
+                        if not isinstance(node, dict):
+                            continue
+                        text = (
+                            node.get("text")
+                            or node.get("comment_text")
+                            or node.get("content")
+                            or ""
+                        )
+                        if not text or not str(text).strip():
+                            continue
+                        user_obj = node.get("user") or node.get("owner") or {}
+                        uname = (
+                            user_obj.get("username")
+                            if isinstance(user_obj, dict)
+                            else node.get("username") or f"ig_user_{len(raw_comments)+1}"
+                        )
+                        likes_val = int(
+                            node.get("comment_like_count")
+                            or node.get("like_count")
+                            or node.get("edge_liked_by", {}).get("count", 0)
+                            or 0
+                        )
+                        raw_comments.append(
+                            {
+                                "comment_id": str(node.get("pk") or node.get("id") or f"ig_rapid_{len(raw_comments)+1}"),
+                                "author": f"@{str(uname).lstrip('@')}",
+                                "raw_text": str(text),
+                                "likes": likes_val,
+                                "published_at": datetime.utcnow().isoformat() + "Z",
+                            }
                         )
 
-                for idx, item in enumerate(comment_list or []):
-                    node = item.get("node", item) if isinstance(item, dict) else {}
-                    if not isinstance(node, dict):
-                        continue
-                    text = (
-                        node.get("text")
-                        or node.get("comment_text")
-                        or node.get("content")
-                        or ""
-                    )
-                    if not text or not str(text).strip():
-                        continue
-                    user_obj = node.get("user") or node.get("owner") or {}
-                    uname = (
-                        user_obj.get("username")
-                        if isinstance(user_obj, dict)
-                        else node.get("username") or f"ig_user_{idx+1}"
-                    )
-                    likes_val = int(
-                        node.get("comment_like_count")
-                        or node.get("like_count")
-                        or node.get("edge_liked_by", {}).get("count", 0)
-                        or 0
-                    )
-                    raw_comments.append(
-                        {
-                            "comment_id": str(node.get("pk") or node.get("id") or f"ig_rapid_{idx+1}"),
-                            "author": f"@{str(uname).lstrip('@')}",
-                            "raw_text": str(text),
-                            "likes": likes_val,
-                            "published_at": datetime.utcnow().isoformat() + "Z",
-                        }
-                    )
-        except Exception:
-            pass
+                    if not pagination_token or len(raw_comments) >= target_ig_limit:
+                        break
+                else:
+                    break
+            except Exception:
+                break
 
         if not raw_comments:
             return None
