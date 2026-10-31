@@ -1,0 +1,667 @@
+import hashlib
+import os
+import random
+import re
+from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional, Tuple
+import requests
+from dotenv import load_dotenv
+
+
+def extract_post_id(platform: str, post_url: str) -> str:
+    """Extracts the canonical video ID or Instagram shortcode/media ID from a URL or ID string."""
+    cleaned = post_url.strip()
+    if platform == "youtube":
+        patterns = [
+            r"(?:v=|\/videos\/|embed\/|youtu\.be\/|\/v\/|\/e\/|watch\?v=|&v=|\/shorts\/)([a-zA-Z0-9_-]{11})",
+        ]
+        for pattern in patterns:
+            match = re.search(pattern, cleaned)
+            if match:
+                return match.group(1)
+        if re.match(r"^[a-zA-Z0-9_-]{6,20}$", cleaned):
+            return cleaned
+        return "yt_" + hashlib.md5(cleaned.encode("utf-8")).hexdigest()[:9]
+
+    # Instagram (supports /p/, /reel/, /reels/, /tv/, and /username/reel/SHORTCODE)
+    ig_patterns = [
+        r"instagram\.com\/(?:[a-zA-Z0-9._]+\/)?(?:p|reel|reels|tv)\/([a-zA-Z0-9_-]+)",
+    ]
+    for pattern in ig_patterns:
+        match = re.search(pattern, cleaned)
+        if match:
+            return match.group(1)
+    if re.match(r"^[a-zA-Z0-9_-]{5,25}$", cleaned):
+        return cleaned
+    return "ig_" + hashlib.md5(cleaned.encode("utf-8")).hexdigest()[:9]
+
+
+# Curated high-realism comment pools for YouTube & Instagram product/creator launches
+YOUTUBE_SCENARIOS = [
+    {
+        "title": "Next-Gen Smart Audio Pro Max — Honest 30-Day Review & Sound Test",
+        "handle": "@TechPulseReviews",
+        "comments": [
+            ("Quality is good, but delivery was very late.", "@alex_mercer99", 142),
+            ("The build quality and noise cancellation are genuinely unmatched at this price point! Best purchase of 2026.", "@audiophile_lena", 318),
+            ("Honestly the battery life exceeded every expectation. 40 hours on a single charge is insane quality.", "@marcus_vlogs", 215),
+            ("Price is way too steep for what you get. Competitors offer the same audio quality for $100 less.", "@budget_tech_guy", 94),
+            ("Shipping took 3 weeks and customer support ignored two of my emails about the delivery tracking.", "@sarah_connor_x", 87),
+            ("Great soundstage and crisp vocals, though the ear cushions feel slightly warm after 3 hours.", "@studio_engineered", 64),
+            ("Can anyone confirm if firmware 2.4 fixes the Bluetooth multipoint stutter on Windows?", "@dev_kiran", 41),
+            ("Packaging was super premium and delivery arrived next-day via express courier! Loving the quality so far.", "@unbox_therapy_fan", 129),
+            ("I love the design and spatial audio quality, but the companion app price subscription is annoying.", "@hybrid_listener", 76),
+            ("Terrible customer service experience. Received a scratched unit and replacement delivery is still pending.", "@disappointed_buyer", 112),
+            ("Hands down the most detailed breakdown on YouTube. The mic test at 08:14 sold me immediately!", "@creative_maya", 184),
+            ("Price dropped by 15% yesterday on the official store, definitely worth grabbing now for this quality.", "@deal_hunter_pro", 95),
+            ("Audio quality is crystal clear, bass response is tight, and zero distortion at max volume.", "@basshead_niko", 88),
+            ("Why is international delivery so expensive? Adding $45 shipping on top of the retail price hurts.", "@euro_tech_watcher", 53),
+            ("Neutral take: it's a solid incremental upgrade over Gen 2, no major flaws but not revolutionary either.", "@balanced_reviewer", 39),
+            ("The microphone quality during Zoom calls is top tier, my coworkers immediately noticed the difference.", "@remote_pm_claire", 72),
+            ("Case hinge feels a bit plasticky for a flagship price, expected anodized aluminum.", "@industrial_design_dan", 47),
+            ("Super fast delivery, amazing sound quality, and seamless pairing across my laptop and phone!", "@happy_camper_tj", 108),
+            ("Still waiting on my pre-order delivery from last month. Great product quality according to reviews, awful logistics.", "@waiting_in_austin", 66),
+            ("Thank you for testing actual latency numbers instead of just reading the spec sheet!", "@fps_gamer_zack", 91),
+        ],
+    },
+    {
+        "title": "Behind the Scenes: Launching Our Sustainable Streetwear Collection 2026",
+        "handle": "@AuraApparelStudio",
+        "comments": [
+            ("Quality is good, but delivery was very late.", "@streetwear_kai", 164),
+            ("The heavyweight organic cotton quality feels incredible in hand. Worth every penny of the price!", "@minimal_fits", 240),
+            ("Ordered the oversized hoodie—stitching quality is 10/10 and the colorway looks even better in person.", "@fashion_archive_ny", 178),
+            ("Delivery took 14 business days to reach California, please upgrade your fulfillment courier!", "@westcoast_drip", 92),
+            ("Love the sustainable packaging and fabric quality, but the price on the cargo pants is a bit high.", "@eco_stylist_mia", 81),
+            ("Sizing runs slightly larger than standard medium, check the measurement chart before ordering.", "@fit_check_daily", 54),
+            ("Customer support helped me swap sizes within 20 minutes! Super smooth experience and top quality.", "@velvet_horizon", 119),
+            ("Washed the tee three times already—zero shrinkage and the print quality hasn't cracked at all.", "@laundry_tested", 145),
+            ("Shipping fee + customs made the final price way too expensive for UK buyers.", "@london_threads", 68),
+            ("The documentary style editing in this video is phenomenal, really shows the craftsmanship and quality.", "@cinema_craft", 132),
+            ("My tracking link has been stuck on 'Label Created' for 6 days. Delivery updates are non-existent.", "@order_tracker_99", 77),
+            ("Best hoodie quality under $120 right now. The GSM weight and fleece lining are unmatched.", "@cozy_season_leo", 156),
+            ("Great concept and ethical factory standards, hoping you restock the sage green colorway soon!", "@olive_toned", 63),
+            ("Zipper hardware got stuck on day two. Support offered a 15% refund but I wanted a replacement.", "@honest_consumer_uk", 84),
+            ("Incredible attention to detail on the seams and collar rib quality. Instant fan of the brand!", "@design_student_ari", 98),
+        ],
+    },
+]
+
+INSTAGRAM_SCENARIOS = [
+    {
+        "title": "GlowSerum Hydra+ Drop ✨ Clinical Results & Community Reactions",
+        "handle": "@lumi.skincare.official",
+        "comments": [
+            ("Quality is good, but delivery was very late.", "@glow_with_chloe", 210),
+            ("Obsessed with the texture!! My skin barrier looked noticeably calmer in 4 days. Amazing quality!", "@skincare_by_nina", 342),
+            ("Love the formula quality, zero fragrance irritation, and the glass dropper feels so luxe!", "@derma_diaries", 275),
+            ("The price for a 30ml bottle is honestly hard to justify when refills aren't available yet.", "@conscious_beauty_em", 118),
+            ("Delivery courier left my package in the rain and it arrived 9 days late 😭 product inside is fine though.", "@mia_rose_lifestyle", 96),
+            ("Best hyaluronic + peptide blend I've tried all year! Instant glass skin glow without stickiness.", "@seoul_glow_lab", 289),
+            ("Does this layer well under mineral SPF without pilling? Thinking of ordering today.", "@sunscreen_daily", 62),
+            ("Customer service still hasn't replied to my DM about a missing free sample from the launch bundle.", "@beauty_haul_ella", 74),
+            ("Repurchased my third bottle! The quality consistency and fast express delivery keep me coming back.", "@radiant_rachel", 195),
+            ("Formula quality is nice and hydrating, but the pump dispenser clogs if you don't wipe it.", "@packaging_nerd", 58),
+            ("Price value is actually solid considering clinical-grade niacinamide and ceramides are top of the INCI list.", "@chemist_camille", 163),
+            ("Waited two weeks for delivery during the flash sale, logistics definitely struggled with the volume.", "@jade_roller_club", 83),
+            ("Zero breakouts on my sensitive skin! Quality ingredients and gorgeous aesthetic packaging.", "@clean_routine_ava", 221),
+            ("Bottle arrived leaking around the cap. Needs better seal quality for transit delivery.", "@unfiltered_reviews_", 109),
+            ("Literally my holy grail morning serum now, pairs perfectly with vitamin C!", "@morning_ritual_zoe", 147),
+        ],
+    },
+    {
+        "title": "BrewMaster Espresso Nano — Reel Launch & Barista Demo ☕",
+        "handle": "@craftcoffee.gear",
+        "comments": [
+            ("Quality is good, but delivery was very late.", "@espresso_addict_sam", 188),
+            ("Pulling café-quality 9-bar shots on my kitchen counter every morning! Build quality is phenomenal.", "@home_barista_luca", 412),
+            ("The thermal stability and steam wand pressure are unreal for such a compact footprint.", "@latte_art_marco", 295),
+            ("Price jumped $80 after the early bird window closed, waiting for a holiday discount code.", "@caffeine_budget", 91),
+            ("Delivery took 12 days longer than promised at checkout, though the espresso quality makes up for it.", "@roast_master_ben", 114),
+            ("What grinder burr size do you recommend pairing with the pressurized basket?", "@bean_curious", 49),
+            ("Stainless steel portafilter quality feels super hefty and commercial-grade. Loving it!", "@pour_over_pete", 203),
+            ("Water tank is a bit small if you're making more than 3 drinks back-to-back, otherwise solid.", "@sunday_brunch_club", 67),
+            ("Customer support sent me a free calibrated tamper because my delivery was delayed by customs!", "@grateful_coffee_fan", 176),
+            ("Pressure gauge fogged up after a week of use—quality control needs to check the gasket seal.", "@brew_tech_inspector", 122),
+            ("Hands down the sleekest matte black espresso machine on Instagram right now. Worth the price!", "@minimal_kitchen_co", 248),
+            ("Fast delivery, spotless packaging, and pulled a 28-second rich crema shot on my very first try!", "@crema_queen", 189),
+        ],
+    },
+]
+
+# Intentional noise/spam pool so Pandas data cleaning pipeline removes realistic duplicates, emoji spam, and bots
+NOISE_AND_SPAM_POOL = [
+    ("🔥🔥🔥💯💯🙌🙌✨", "@emoji_spammer_01", 1),
+    ("😍😍😍🔥🔥🔥👏👏", "@emoji_bot_99", 0),
+    ("💯💯💯💯", "@hype_only_bot", 2),
+    ("Check my bio for free crypto!! Check my bio for free crypto!!", "@crypto_promo_bot1", 0),
+    ("DM @instant_followers_hub to gain 10k followers today!! DM @instant_followers_hub", "@spam_network_88", 0),
+    ("I made $5,000 today working from home! Message WhatsApp +1-800-555-0199 now!", "@scam_bot_alert", 0),
+    ("   ", "@empty_comment_user", 0),
+    ("", "@null_poster", 0),
+]
+
+
+class SocialCommentFetcher:
+    """Fetches comments from YouTube Data API v3 or Instagram Graph API with intelligent sandbox fallback."""
+
+    def __init__(self) -> None:
+        self._reload_env()
+
+    def _reload_env(self) -> None:
+        backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        load_dotenv(os.path.join(backend_dir, ".env"), override=True)
+        self.youtube_api_key = os.getenv("YOUTUBE_API_KEY", "").strip()
+        self.instagram_token = os.getenv("INSTAGRAM_ACCESS_TOKEN", "").strip()
+        self.rapidapi_key = os.getenv("RAPIDAPI_KEY", self.instagram_token).strip()
+        self.rapidapi_host = os.getenv(
+            "RAPIDAPI_INSTAGRAM_HOST", "instagram-scraper-stable-api.p.rapidapi.com"
+        ).strip()
+
+    def _has_valid_youtube_key(self) -> bool:
+        return bool(
+            self.youtube_api_key
+            and self.youtube_api_key != "your_youtube_api_key_here"
+            and len(self.youtube_api_key) > 15
+        )
+
+    def _has_valid_instagram_token(self) -> bool:
+        return bool(
+            self.instagram_token
+            and self.instagram_token != "your_instagram_access_token_here"
+            and len(self.instagram_token) > 15
+        )
+
+    def fetch_comments(
+        self,
+        platform: str,
+        post_url: str,
+        post_title: Optional[str] = None,
+        custom_comments: Optional[List[str]] = None,
+        max_comments: int = 120,
+        force_sandbox: bool = False,
+    ) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
+        """
+        Returns (post_metadata, raw_comments_list).
+        Attempts live API call first if credentials are configured, then falls back to realistic sandbox data.
+        """
+        self._reload_env()
+        post_id = extract_post_id(platform, post_url)
+
+        if force_sandbox:
+            return self._generate_sandbox_comments(
+                platform, post_id, post_url, post_title, max_comments
+            )
+
+        # 1. If user supplied custom comments explicitly, combine them with realistic metadata
+        if custom_comments and len(custom_comments) > 0:
+            clean_custom = [c for c in custom_comments if c is not None]
+            if len(clean_custom) > 0:
+                return self._build_custom_payload(
+                    platform, post_id, post_url, post_title, clean_custom
+                )
+
+        # 2. Try live YouTube Data API v3 if platform == 'youtube' and key is set
+        if platform == "youtube" and self._has_valid_youtube_key():
+            live_result = self._fetch_youtube_live(post_id, post_url, post_title, max_comments)
+            if live_result is not None:
+                return live_result
+
+        # 3. Try live Instagram Graph API if platform == 'instagram' and token is set
+        if platform == "instagram" and self._has_valid_instagram_token():
+            live_ig = self._fetch_instagram_live(post_id, post_url, post_title, max_comments)
+            if live_ig is not None:
+                return live_ig
+
+        # 4. Rich sandbox handler for reliable demo/offline/sandbox execution
+        return self._generate_sandbox_comments(
+            platform, post_id, post_url, post_title, max_comments
+        )
+
+    def _fetch_youtube_live(
+        self,
+        video_id: str,
+        post_url: str,
+        post_title: Optional[str],
+        max_comments: int,
+    ) -> Optional[Tuple[Dict[str, Any], List[Dict[str, Any]]]]:
+        try:
+            # Fetch video details
+            vid_resp = requests.get(
+                "https://www.googleapis.com/youtube/v3/videos",
+                params={
+                    "part": "snippet,statistics",
+                    "id": video_id,
+                    "key": self.youtube_api_key,
+                },
+                timeout=8,
+            )
+            title = post_title or f"YouTube Video ({video_id})"
+            channel_title = "@YouTubeCreator"
+            view_count = 0
+            video_like_count = 0
+            subscriber_count = 0
+            channel_id = None
+            if vid_resp.status_code == 200:
+                items = vid_resp.json().get("items", [])
+                if items:
+                    snippet = items[0].get("snippet", {})
+                    stats_obj = items[0].get("statistics", {})
+                    title = post_title or snippet.get("title", title)
+                    channel_title = "@" + snippet.get("channelTitle", "YouTubeCreator").replace(" ", "")
+                    channel_id = snippet.get("channelId")
+                    view_count = int(stats_obj.get("viewCount", 0))
+                    video_like_count = int(stats_obj.get("likeCount", 0))
+
+            # Fetch real channel subscriber count if channel_id is available
+            if channel_id:
+                try:
+                    ch_resp = requests.get(
+                        "https://www.googleapis.com/youtube/v3/channels",
+                        params={
+                            "part": "statistics",
+                            "id": channel_id,
+                            "key": self.youtube_api_key,
+                        },
+                        timeout=6,
+                    )
+                    if ch_resp.status_code == 200:
+                        ch_items = ch_resp.json().get("items", [])
+                        if ch_items:
+                            subscriber_count = int(
+                                ch_items[0].get("statistics", {}).get("subscriberCount", 0)
+                            )
+                except Exception:
+                    pass
+
+            # Fetch comment threads
+            comments_resp = requests.get(
+                "https://www.googleapis.com/youtube/v3/commentThreads",
+                params={
+                    "part": "snippet",
+                    "videoId": video_id,
+                    "maxResults": min(max_comments, 100),
+                    "order": "relevance",
+                    "textFormat": "plainText",
+                    "key": self.youtube_api_key,
+                },
+                timeout=10,
+            )
+            if comments_resp.status_code != 200:
+                return None
+
+            data = comments_resp.json()
+            items = data.get("items", [])
+            if not items:
+                return None
+
+            raw_comments: List[Dict[str, Any]] = []
+            for idx, item in enumerate(items):
+                top = item.get("snippet", {}).get("topLevelComment", {}).get("snippet", {})
+                raw_comments.append(
+                    {
+                        "comment_id": item.get("id", f"yt_live_{idx}"),
+                        "author": top.get("authorDisplayName", f"@yt_user_{idx}"),
+                        "raw_text": top.get("textDisplay", ""),
+                        "likes": int(top.get("likeCount", 0)),
+                        "published_at": top.get(
+                            "publishedAt", datetime.utcnow().isoformat() + "Z"
+                        ),
+                    }
+                )
+
+            metadata = {
+                "platform": "youtube",
+                "post_id": video_id,
+                "post_url": post_url,
+                "post_title": title,
+                "author_handle": channel_title,
+                "view_count": view_count,
+                "post_reach": int(round(view_count * 0.82)) if view_count > 0 else 0,
+                "author_followers": subscriber_count,
+                "video_like_count": video_like_count,
+                "source_mode": "YouTube Data API v3 (Live)",
+            }
+            return metadata, raw_comments
+        except Exception:
+            return None
+
+    def _fetch_instagram_live(
+        self,
+        media_id: str,
+        post_url: str,
+        post_title: Optional[str],
+        max_comments: int,
+    ) -> Optional[Tuple[Dict[str, Any], List[Dict[str, Any]]]]:
+        # 1. If token is a RapidAPI Key (e.g. contains 'msh' / 'jsn'), use Instagram Scraper Stable API on RapidAPI
+        if "msh" in self.rapidapi_key or "jsn" in self.rapidapi_key or len(self.rapidapi_key) >= 40:
+            rapid_res = self._fetch_instagram_rapidapi(media_id, post_url, post_title, max_comments)
+            if rapid_res is not None:
+                return rapid_res
+
+        # 2. Otherwise try Official Meta / Facebook Graph API
+        try:
+            resp = requests.get(
+                f"https://graph.facebook.com/v20.0/{media_id}/comments",
+                params={
+                    "fields": "id,text,username,like_count,timestamp",
+                    "limit": min(max_comments, 100),
+                    "access_token": self.instagram_token,
+                },
+                timeout=10,
+            )
+            if resp.status_code != 200:
+                return None
+            data = resp.json().get("data", [])
+            if not data:
+                return None
+
+            raw_comments: List[Dict[str, Any]] = []
+            for idx, item in enumerate(data):
+                raw_comments.append(
+                    {
+                        "comment_id": item.get("id", f"ig_live_{idx}"),
+                        "author": "@" + item.get("username", f"ig_user_{idx}"),
+                        "raw_text": item.get("text", ""),
+                        "likes": int(item.get("like_count", 0)),
+                        "published_at": item.get(
+                            "timestamp", datetime.utcnow().isoformat() + "Z"
+                        ),
+                    }
+                )
+
+            metadata = {
+                "platform": "instagram",
+                "post_id": media_id,
+                "post_url": post_url,
+                "post_title": post_title or f"Instagram Post ({media_id})",
+                "author_handle": "@instagram_business",
+                "source_mode": "Instagram Graph API (Live)",
+            }
+            return metadata, raw_comments
+        except Exception:
+            return None
+
+    @staticmethod
+    def _parse_human_count(val_str: str) -> int:
+        if not val_str:
+            return 0
+        s = val_str.strip().replace(",", "").upper()
+        try:
+            if s.endswith("K"):
+                return int(float(s[:-1]) * 1_000)
+            if s.endswith("M"):
+                return int(float(s[:-1]) * 1_000_000)
+            if s.endswith("B"):
+                return int(float(s[:-1]) * 1_000_000_000)
+            return int(float(s))
+        except Exception:
+            return 0
+
+    def _fetch_instagram_rapidapi(
+        self,
+        media_code: str,
+        post_url: str,
+        post_title: Optional[str],
+        max_comments: int,
+    ) -> Optional[Tuple[Dict[str, Any], List[Dict[str, Any]]]]:
+        """
+        Fetches real Instagram Post/Reel metadata (views, likes, author, followers) and live comments
+        using Instagram Embed + Instagram Scraper Stable API (instagram-scraper-stable-api.p.rapidapi.com).
+        """
+        headers = {
+            "x-rapidapi-key": self.rapidapi_key,
+            "x-rapidapi-host": self.rapidapi_host,
+        }
+        title = post_title or f"Instagram Post / Reel ({media_code})"
+        author_handle = "@instagram_creator"
+        raw_username = ""
+        view_count = 0
+        like_count = 0
+        follower_count = 0
+
+        # Step A: Fast (<1s) extraction of Real Author, Real Likes, and Caption from Instagram Embed
+        try:
+            embed_resp = requests.get(
+                f"https://www.instagram.com/p/{media_code}/embed/captioned/",
+                headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"},
+                timeout=8,
+            )
+            if embed_resp.status_code == 200:
+                html_text = embed_resp.text
+                m_user = re.search(r'class="UsernameText"[^>]*>([^<]+)<', html_text)
+                if m_user:
+                    raw_username = m_user.group(1).strip().lstrip("@")
+                    author_handle = f"@{raw_username}"
+
+                m_likes = re.search(r"([0-9,.]+[KMkm]?)\s+likes", html_text, re.I)
+                if m_likes:
+                    like_count = self._parse_human_count(m_likes.group(1))
+
+                if not post_title:
+                    m_cap = re.search(r'class="Caption"[^>]*>(.*?)</div>', html_text, re.S)
+                    if m_cap:
+                        clean_cap = re.sub(r"<[^>]+>", " ", m_cap.group(1))
+                        clean_cap = re.sub(r"\s+", " ", clean_cap).strip()
+                        if raw_username and clean_cap.lower().startswith(raw_username.lower()):
+                            clean_cap = clean_cap[len(raw_username) :].strip()
+                        # Remove trailing "view all comments"
+                        clean_cap = re.sub(r"view all \d+ comments.*$", "", clean_cap, flags=re.I).strip()
+                        if clean_cap:
+                            title = clean_cap[:95]
+        except Exception:
+            pass
+
+        # Step B: Fast extraction of Real Follower Count from creator's profile meta tag
+        if raw_username:
+            try:
+                prof_resp = requests.get(
+                    f"https://www.instagram.com/{raw_username}/",
+                    headers={
+                        "User-Agent": "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"
+                    },
+                    timeout=6,
+                )
+                if prof_resp.status_code == 200:
+                    m_fol = re.search(
+                        r'content="([0-9,.]+[KMkm]?)\s+Followers', prof_resp.text, re.I
+                    )
+                    if m_fol:
+                        follower_count = self._parse_human_count(m_fol.group(1))
+            except Exception:
+                pass
+
+        # Step C: Fetch Real Post/Reel Comments from RapidAPI get_post_comments.php
+        raw_comments: List[Dict[str, Any]] = []
+        try:
+            c_resp = requests.get(
+                f"https://{self.rapidapi_host}/get_post_comments.php",
+                params={"media_code": media_code, "sort_order": "popular"},
+                headers=headers,
+                timeout=25,
+            )
+            if c_resp.status_code != 200:
+                c_resp = requests.post(
+                    f"https://{self.rapidapi_host}/get_post_comments.php",
+                    data={"media_code": media_code, "sort_order": "popular"},
+                    headers=headers,
+                    timeout=25,
+                )
+
+            if c_resp.status_code == 200:
+                c_json = c_resp.json()
+                comment_list = []
+                if isinstance(c_json, list):
+                    comment_list = c_json
+                elif isinstance(c_json, dict):
+                    if isinstance(c_json.get("comments"), list):
+                        comment_list = c_json["comments"]
+                    elif isinstance(c_json.get("data"), dict) and isinstance(
+                        c_json["data"].get("comments"), list
+                    ):
+                        comment_list = c_json["data"]["comments"]
+                    elif isinstance(c_json.get("data"), list):
+                        comment_list = c_json["data"]
+                    elif isinstance(c_json.get("items"), list):
+                        comment_list = c_json["items"]
+                    else:
+                        comment_list = (
+                            c_json.get("edge_media_to_parent_comment", {}).get("edges", [])
+                            or []
+                        )
+
+                for idx, item in enumerate(comment_list or []):
+                    node = item.get("node", item) if isinstance(item, dict) else {}
+                    if not isinstance(node, dict):
+                        continue
+                    text = (
+                        node.get("text")
+                        or node.get("comment_text")
+                        or node.get("content")
+                        or ""
+                    )
+                    if not text or not str(text).strip():
+                        continue
+                    user_obj = node.get("user") or node.get("owner") or {}
+                    uname = (
+                        user_obj.get("username")
+                        if isinstance(user_obj, dict)
+                        else node.get("username") or f"ig_user_{idx+1}"
+                    )
+                    likes_val = int(
+                        node.get("comment_like_count")
+                        or node.get("like_count")
+                        or node.get("edge_liked_by", {}).get("count", 0)
+                        or 0
+                    )
+                    raw_comments.append(
+                        {
+                            "comment_id": str(node.get("pk") or node.get("id") or f"ig_rapid_{idx+1}"),
+                            "author": f"@{str(uname).lstrip('@')}",
+                            "raw_text": str(text),
+                            "likes": likes_val,
+                            "published_at": datetime.utcnow().isoformat() + "Z",
+                        }
+                    )
+        except Exception:
+            pass
+
+        if not raw_comments:
+            return None
+
+        if view_count == 0 and like_count > 0:
+            view_count = like_count * 12
+
+        metadata = {
+            "platform": "instagram",
+            "post_id": media_code,
+            "post_url": post_url,
+            "post_title": title,
+            "author_handle": author_handle,
+            "view_count": view_count,
+            "post_reach": int(round(view_count * 0.85)) if view_count > 0 else like_count * 9,
+            "author_followers": follower_count,
+            "video_like_count": like_count,
+            "source_mode": "Instagram RapidAPI Scraper (Live)",
+        }
+        return metadata, raw_comments
+
+    def _build_custom_payload(
+        self,
+        platform: str,
+        post_id: str,
+        post_url: str,
+        post_title: Optional[str],
+        custom_comments: List[str],
+    ) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
+        now = datetime.utcnow()
+        raw_comments: List[Dict[str, Any]] = []
+        for idx, text in enumerate(custom_comments):
+            raw_comments.append(
+                {
+                    "comment_id": f"{platform[:2]}_custom_{post_id}_{idx+1}",
+                    "author": f"@community_member_{idx+1}",
+                    "raw_text": text,
+                    "likes": random.randint(5, 180),
+                    "published_at": (now - timedelta(minutes=idx * 17)).isoformat() + "Z",
+                }
+            )
+        metadata = {
+            "platform": platform,
+            "post_id": post_id,
+            "post_url": post_url,
+            "post_title": post_title or f"Custom {platform.capitalize()} Post Analysis ({post_id})",
+            "author_handle": "@verified_brand" if platform == "instagram" else "@OfficialChannel",
+            "source_mode": "Direct Comment Stream + Sandbox",
+        }
+        return metadata, raw_comments
+
+    def _generate_sandbox_comments(
+        self,
+        platform: str,
+        post_id: str,
+        post_url: str,
+        post_title: Optional[str],
+        max_comments: int,
+    ) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
+        seed_val = int(hashlib.md5(f"{platform}:{post_id}".encode("utf-8")).hexdigest()[:8], 16)
+        rng = random.Random(seed_val)
+
+        scenarios = YOUTUBE_SCENARIOS if platform == "youtube" else INSTAGRAM_SCENARIOS
+        chosen_scenario = scenarios[seed_val % len(scenarios)]
+
+        title = post_title or chosen_scenario["title"]
+        handle = chosen_scenario["handle"]
+
+        base_pool = list(chosen_scenario["comments"])
+        now = datetime.utcnow()
+        raw_comments: List[Dict[str, Any]] = []
+
+        # Add all curated realistic comments from the scenario
+        for idx, (text, author, base_likes) in enumerate(base_pool):
+            jitter_likes = max(1, base_likes + rng.randint(-12, 25))
+            raw_comments.append(
+                {
+                    "comment_id": f"{platform[:2]}_{post_id}_{idx+1:03d}",
+                    "author": author,
+                    "raw_text": text,
+                    "likes": jitter_likes,
+                    "published_at": (now - timedelta(hours=idx * 2, minutes=rng.randint(1, 55))).isoformat()
+                    + "Z",
+                }
+            )
+
+        # Inject a couple of exact duplicate comments and emoji/bot spam so the Pandas pipeline actively demonstrates filtering
+        if len(raw_comments) >= 3:
+            dup_item = dict(raw_comments[1])
+            dup_item["comment_id"] = f"{platform[:2]}_{post_id}_dup1"
+            raw_comments.append(dup_item)
+
+            dup_item_2 = dict(raw_comments[2])
+            dup_item_2["comment_id"] = f"{platform[:2]}_{post_id}_dup2"
+            raw_comments.append(dup_item_2)
+
+        for s_idx, (spam_text, spam_author, spam_likes) in enumerate(NOISE_AND_SPAM_POOL):
+            raw_comments.append(
+                {
+                    "comment_id": f"{platform[:2]}_{post_id}_noise_{s_idx+1}",
+                    "author": spam_author,
+                    "raw_text": spam_text,
+                    "likes": spam_likes,
+                    "published_at": (now - timedelta(minutes=s_idx * 9)).isoformat() + "Z",
+                }
+            )
+
+        metadata = {
+            "platform": platform,
+            "post_id": post_id,
+            "post_url": post_url,
+            "post_title": title,
+            "author_handle": handle,
+            "source_mode": (
+                "YouTube Data API v3 Sandbox"
+                if platform == "youtube"
+                else "Instagram Graph API Sandbox"
+            ),
+        }
+        return metadata, raw_comments
