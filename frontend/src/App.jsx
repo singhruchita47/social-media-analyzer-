@@ -19,6 +19,7 @@ import {
   resetDemoDataset,
   checkBackendHealth,
 } from './services/api.js';
+import { exportAnalysisPDF } from './services/pdfExporter.js';
 import {
   CheckCircle2,
   Download,
@@ -28,6 +29,7 @@ import {
   Youtube,
   Instagram,
   Eye,
+  FileText,
 } from 'lucide-react';
 
 export default function App() {
@@ -185,6 +187,19 @@ export default function App() {
     showToast(`Exported ${selectedPlatform.toUpperCase()} comments to CSV`);
   };
 
+  const handleExportPDF = () => {
+    try {
+      exportAnalysisPDF({
+        stats: activeViewStats,
+        activeSingleAnalysis,
+        selectedPlatform,
+      });
+      showToast(`Generating ${selectedPlatform.toUpperCase()} PDF Report with graphs & comments...`);
+    } catch {
+      showToast('Unable to launch PDF print preview.');
+    }
+  };
+
   const handleKeywordSelect = (kw) => {
     setSearchQuery(kw);
     if (activeTab === 'dashboard' && kw) {
@@ -284,6 +299,7 @@ export default function App() {
           setDarkMode={setDarkMode}
           onOpenAnalyzeModal={() => setIsAnalyzeModalOpen(true)}
           onExportCSV={handleExportCSV}
+          onExportPDF={handleExportPDF}
           sidebarOpen={sidebarOpen}
           onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
         />
@@ -380,6 +396,14 @@ export default function App() {
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={handleExportPDF}
+                    title="Export Full Video PDF Analysis Report with Creator Details & Comments"
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-sm hover:from-orange-600 hover:to-amber-600 transition"
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                    <span>Download PDF Report</span>
+                  </button>
                   {activeTab === 'dashboard' && (
                     <button
                       onClick={() => setActiveTab('insights')}
@@ -596,6 +620,7 @@ export default function App() {
                 sentimentFilter={sentimentFilter}
                 setSentimentFilter={setSentimentFilter}
                 onOpenAnalyzeModal={() => setIsAnalyzeModalOpen(true)}
+                onExportPDF={handleExportPDF}
               />
             </div>
           )}

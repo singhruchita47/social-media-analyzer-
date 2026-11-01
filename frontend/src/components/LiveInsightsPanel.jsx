@@ -14,6 +14,7 @@ import {
   LayoutList,
   LayoutGrid,
   MessageSquare,
+  FileText,
 } from 'lucide-react';
 
 const STATUS_CONFIG = {
@@ -322,6 +323,7 @@ export default function LiveInsightsPanel({
   sentimentFilter,
   setSentimentFilter,
   onOpenAnalyzeModal,
+  onExportPDF,
 }) {
   const [problemFilter, setProblemFilter] = useState('all'); // 'all' | 'any_problem' | 'price' | 'delivery' | 'quality' | 'packaging' | 'support'
   const [sortBy, setSortBy] = useState('problems_first'); // 'problems_first' | 'likes' | 'confidence' | 'positive'
@@ -652,6 +654,17 @@ export default function LiveInsightsPanel({
                   <LayoutGrid className="w-4 h-4" />
                 </button>
               </div>
+
+              {onExportPDF && (
+                <button
+                  onClick={onExportPDF}
+                  title="Download Publication-Grade PDF Report with Graphs, Ratios & Comments"
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-sm hover:from-orange-600 hover:to-amber-600 transition"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>Export PDF Report</span>
+                </button>
+              )}
 
               {onOpenAnalyzeModal && (
                 <button

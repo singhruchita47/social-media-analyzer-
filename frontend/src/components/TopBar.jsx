@@ -10,6 +10,7 @@ import {
   Share2,
   PanelLeftClose,
   PanelLeftOpen,
+  FileText,
 } from 'lucide-react';
 
 export default function TopBar({
@@ -21,6 +22,7 @@ export default function TopBar({
   setDarkMode,
   onOpenAnalyzeModal,
   onExportCSV,
+  onExportPDF,
   sidebarOpen = true,
   onToggleSidebar,
 }) {
@@ -134,6 +136,15 @@ export default function TopBar({
             Instagram Analytics
           </button>
         </div>
+
+        <button
+          onClick={onExportPDF}
+          title="Download Professional PDF Report with Charts & Creator Info"
+          className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-sm hover:from-orange-600 hover:to-amber-600 transition"
+        >
+          <FileText className="w-3.5 h-3.5" />
+          <span>Export PDF Report</span>
+        </button>
 
         <button
           onClick={onExportCSV}
