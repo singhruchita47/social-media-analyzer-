@@ -143,8 +143,18 @@ function analyzeCommentRootCause(comment) {
     ) ||
     (!hasNegatedPositive && /\b(oily|sticky|whitecast|greasy|dry|rough)\b/i.test(lower));
 
-  // 1. Dedicated Question & Inquiry Handling
-  if (sentiment === 'Question' || comment.intent === 'Question' || comment.question_category) {
+  // 1. Dedicated Question & Inquiry Handling (Strictly only when sentiment is Question or intent is Question)
+  const isQuestionComment =
+    sentiment === 'Question' ||
+    comment.intent === 'Question' ||
+    (Boolean(comment.question_category) &&
+      sentiment === 'Neutral' &&
+      (/[?]/i.test(raw) ||
+        /\b(kya|kaise|kab|kitna|kitne|kitni|kahan|kaha|kidhar|konsa|kaunsa|konsi|kaunsi|kis|kisko|how|what|where|when|why|which|link please|send link)\b/i.test(
+          lower
+        )));
+
+  if (isQuestionComment) {
     const qCat = comment.question_category || 'Customer Question / Inquiry';
     return {
       sentiment: 'Question',
@@ -271,13 +281,16 @@ function analyzeCommentRootCause(comment) {
   }
 
   if (sentiment === 'Positive') {
+    const isCompliment = /\b(pretty|beautiful|cute|sundar|pyari|pyaari|queen|slay|gorgeous|love|best|amazing|awesome|superb|sweet|natural|naturally|mast|badiya)\b/i.test(lower);
     return {
       sentiment,
       problemKey: 'none',
-      badge: '✅ No Issue (Happy)',
+      badge: isCompliment ? '💖 Appreciation' : '✅ Positive Feedback',
       badgeClass:
         'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/25',
-      reason: 'Customer is happy with the product quality and results',
+      reason: isCompliment
+        ? 'Customer shared genuine appreciation, admiration, or praise'
+        : 'Customer is happy with the product quality and results',
       likedClause: null,
       problemClause: null,
     };
@@ -290,6 +303,7 @@ function analyzeCommentRootCause(comment) {
     raw.includes('लिंक') ||
     /^(link|pp|price|link please|send link)$/i.test(lower.trim());
   const isPromo = /\b(coupon|discount|sale|code|bio)\b/i.test(lower);
+  const isHumorous = /\b(😂|🤣|lol|lmao|meme|funny)\b/i.test(raw);
   const isQuestion = lower.includes('?');
   return {
     sentiment,
@@ -298,6 +312,8 @@ function analyzeCommentRootCause(comment) {
       ? '🔗 Product Link Request'
       : isPromo
       ? '🏷️ Promo / Coupon'
+      : isHumorous
+      ? '😄 Humorous Reaction'
       : isQuestion
       ? '❓ Customer Question'
       : '💬 General Comment',
@@ -307,9 +323,11 @@ function analyzeCommentRootCause(comment) {
       ? 'Customer is asking for the product buying link'
       : isPromo
       ? 'Promotional / discount code comment'
+      : isHumorous
+      ? 'Audience shared a humorous or lighthearted remark'
       : isQuestion
-      ? 'Customer is asking a product/usage question'
-      : 'Neutral audience comment',
+      ? 'General question / query from viewer'
+      : 'General neutral audience remark or observation',
     likedClause: null,
     problemClause: null,
   };

@@ -9,6 +9,17 @@ import requests
 from models import CommentItem, KeywordMetric, PainPointItem, SentimentLabel
 from services.data_pipeline import demojize_with_feelings
 
+try:
+    from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+    vader_analyzer = SentimentIntensityAnalyzer()
+except Exception:
+    vader_analyzer = None
+
+try:
+    from textblob import TextBlob
+except Exception:
+    TextBlob = None
+
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
     try:
@@ -238,7 +249,7 @@ ADVANCED_SYSTEM_PROMPT = """You are an elite Multilingual Social Media Sentiment
 
 CRITICAL LINGUISTIC, SARCASM & QUESTION RULES:
 1. DEDICATED QUESTION / INQUIRY DETECTION:
-   - When a comment is asking a question, inquiry, doubt, price check, availability, usage advice, or link request (e.g., "Price kitna hai?", "Ye India me milega kya?", "Link please", "Oily skin pe chalega?", "Can someone tell me how to fix this?", "How much does it cost?", "When will this be back in stock?", "Which shade is best for fair skin?"):
+   - When a comment is asking a genuine question, inquiry, doubt, price check, availability, usage advice, or link request (e.g., "Price kitna hai?", "Ye India me milega kya?", "Link please", "Oily skin pe chalega?", "Can someone tell me how to fix this?", "How much does it cost?", "When will this be back in stock?", "Which shade is best for fair skin?"):
    - You MUST classify it STRICTLY as "Question" (NEVER "Neutral" and NEVER "Negative").
    - Set score to a slightly inquisitive neutral value between +0.05 and +0.15.
    - Set `intent` to "Question".
@@ -250,6 +261,9 @@ CRITICAL LINGUISTIC, SARCASM & QUESTION RULES:
      * "General Customer Question"
    - Do NOT treat questions asking about price as negative complaints (e.g. "Price kitna hai?" is a Question, NOT a Price Problem!).
    - Set `pain_point` to null for questions.
+   - CRITICAL NEGATIVE CONSTRAINT: For ANY comment that is NOT a question (i.e. "Positive", "Negative", "Neutral", "Mixed"), you MUST set `question_category` to null! NEVER put "General Customer Question" on compliments or neutral statements.
+   - NEVER classify compliments or praise (e.g. "Naturally you're so pretty", "You look gorgeous", "Love your outfit") as "Question"! Compliments are STRICTLY "Positive" with intent "Appreciation" and question_category null.
+   - NEVER classify jokes or casual observations (e.g. "Itna toh kim teahung bhi nhi laga ta 😂") as "Question"! They are "Neutral" or "Positive" with question_category null.
 
 2. DECODE SARCASM & IRONY STRICTLY AS NEGATIVE:
    - Detect hidden human intent, mockery, irony, and sarcastic phrasing.
@@ -292,7 +306,7 @@ CRITICAL LINGUISTIC, SARCASM & QUESTION RULES:
       "confidence": 0.96,
       "is_sarcastic": false,
       "intent": "Question|Sarcastic Complaint|Appreciation|Direct Complaint|Mixed Feedback|General",
-      "question_category": "Pricing & Buying Inquiry|Product Usage & Compatibility|Delivery & Shipping Status|Purchase Link & Availability|General Customer Question",
+      "question_category": null,
       "pain_point": null,
       "keywords": ["price", "inquiry"],
       "is_critical": false
@@ -342,6 +356,14 @@ def detect_question_intent(lower_text: str) -> Optional[Tuple[str, str]]:
         "are you blind", "are you crazy", "are you deaf", "sharam hai kya",
     )):
         return None
+
+    # Exclude pure compliments or humorous remarks that don't have '?'
+    if "?" not in lower_text:
+        if any(p in lower_text for p in (
+            "so pretty", "pretty", "beautiful", "gorgeous", "cute", "queen", "slay",
+            "love you", "proud of", "bhi nhi", "bhi nahi", "looking so", "naturally",
+        )):
+            return None
 
     if not QUESTION_TRIGGERS_REGEX.search(lower_text):
         return None
@@ -403,6 +425,9 @@ POSITIVE_LEXICON = {
     "lightweight": 0.72, "protects": 0.68, "glowing": 0.78, "glow": 0.7,
     "effective": 0.78, "recommended": 0.82, "recommend": 0.8, "must": 0.5,
     # English + Hindi / Hinglish positive words
+    "pretty": 0.88, "naturally": 0.78, "natural": 0.75, "pyari": 0.82, "pyaari": 0.82,
+    "sundar": 0.85, "khubsurat": 0.88, "khoobsurat": 0.88, "queen": 0.85, "slay": 0.82,
+    "stunning": 0.88, "charming": 0.82, "sweet": 0.75, "angel": 0.85, "doll": 0.82,
     "nice": 0.68, "awesome": 0.85, "superb": 0.86, "super": 0.75,
     "beautiful": 0.82, "cute": 0.75, "funny": 0.7, "hilarious": 0.8,
     "legend": 0.82, "legendary": 0.88, "goat": 0.85, "respect": 0.78,
@@ -762,10 +787,13 @@ class SentimentNLPEngine:
                 if is_sarc:
                     lbl = "Negative"
                 intent = str(c_info.get("intent", "Question" if lbl == "Question" else ("Sarcastic Complaint" if is_sarc else "General")))
-                q_cat = c_info.get("question_category")
-                if lbl == "Question" and not q_cat:
-                    q_res = detect_question_intent(r["cleaned_text"].lower())
-                    q_cat = q_res[0] if q_res else "General Customer Question"
+                if lbl == "Question":
+                    q_cat = c_info.get("question_category")
+                    if not q_cat:
+                        q_res = detect_question_intent(r["cleaned_text"].lower())
+                        q_cat = q_res[0] if q_res else "General Customer Question"
+                else:
+                    q_cat = None
 
                 score = float(c_info.get("score", -0.85 if lbl == "Negative" else (0.08 if lbl == "Question" else 0.0)))
                 if lbl == "Negative" and score > -0.2:
@@ -1019,10 +1047,13 @@ class SentimentNLPEngine:
                 if is_sarc:
                     lbl = "Negative"
                 intent = str(c_info.get("intent", "Question" if lbl == "Question" else ("Sarcastic Complaint" if is_sarc else "General")))
-                q_cat = c_info.get("question_category")
-                if lbl == "Question" and not q_cat:
-                    q_res = detect_question_intent(r["cleaned_text"].lower())
-                    q_cat = q_res[0] if q_res else "General Customer Question"
+                if lbl == "Question":
+                    q_cat = c_info.get("question_category")
+                    if not q_cat:
+                        q_res = detect_question_intent(r["cleaned_text"].lower())
+                        q_cat = q_res[0] if q_res else "General Customer Question"
+                else:
+                    q_cat = None
 
                 score = float(c_info.get("score", -0.85 if lbl == "Negative" else (0.08 if lbl == "Question" else 0.0)))
                 if lbl == "Negative" and score > -0.2:
@@ -1303,6 +1334,22 @@ class SentimentNLPEngine:
                 and (pos_hits or neg_hits)
             )
         )
+
+        # VADER Social Media Sentiment Intensity & TextBlob Polarity
+        if vader_analyzer is not None:
+            v_res = vader_analyzer.polarity_scores(text)
+            comp = v_res.get("compound", 0.0)
+            if comp >= 0.35:
+                pos_hits.append(comp * 0.9)
+            elif comp <= -0.35:
+                neg_hits.append(comp * 0.9)
+
+        if TextBlob is not None:
+            tb_pol = TextBlob(text).sentiment.polarity
+            if tb_pol >= 0.3:
+                pos_hits.append(tb_pol * 0.8)
+            elif tb_pol <= -0.3:
+                neg_hits.append(tb_pol * 0.8)
 
         pos_sum = sum(pos_hits)
         neg_sum = sum(neg_hits)
