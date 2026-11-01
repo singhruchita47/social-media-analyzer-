@@ -168,7 +168,7 @@ export default function MetricsCards({
       valueColor: 'text-[#92400E]',
       badge: `${((bd.neutral_count ?? 0) + (bd.mixed_count ?? 0)).toLocaleString()} threads`,
       badgeGood: false,
-      subtitle: 'Contrastive ("Yes, But…") & questions',
+      subtitle: 'Contrastive ("Yes, But…") & neutral statements',
       headerBg: 'bg-[#F59E0B]',
       headerTextDark: false,
       icon: Meh,

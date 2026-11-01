@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Literal, Optional
 from pydantic import BaseModel, Field
 
 PlatformType = Literal["youtube", "instagram"]
-SentimentLabel = Literal["Positive", "Negative", "Neutral", "Mixed"]
+SentimentLabel = Literal["Positive", "Negative", "Neutral", "Mixed", "Question"]
 
 
 class AnalyzeRequest(BaseModel):
@@ -42,6 +42,9 @@ class CommentItem(BaseModel):
     pain_point: Optional[str] = None
     keywords: List[str] = Field(default_factory=list)
     is_critical: bool = False
+    is_sarcastic: bool = False
+    intent: str = "General"  # "Question", "Sarcastic Complaint", "Appreciation", "Direct Complaint", "Mixed Feedback", "General"
+    question_category: Optional[str] = None  # "Pricing & Buying", "Usage & Compatibility", "Link Request", "Delivery & Shipping", "General Question"
 
 
 class KeywordMetric(BaseModel):
@@ -81,14 +84,18 @@ class SentimentBreakdown(BaseModel):
     negative_count: int
     neutral_count: int
     mixed_count: int
+    question_count: int = 0
     positive_pct: float
     negative_pct: float
     neutral_pct: float
     mixed_pct: float
-    # 3-way normalized percentages (Positive / Negative / Neutral-Mixed combined) for primary overview cards
+    question_pct: float = 0.0
+    question_pct: float = 0.0
+    # Primary overview percentages
     primary_positive_pct: float
     primary_negative_pct: float
     primary_neutral_pct: float
+    primary_question_pct: float = 0.0
 
 
 class AnalysisResult(BaseModel):
@@ -114,6 +121,7 @@ class AnalysisResult(BaseModel):
     pain_points: List[PainPointItem]
     critical_feedback: List[CommentItem]
     comments: List[CommentItem]
+    top_questions: List[Dict[str, Any]] = Field(default_factory=list)
 
 
 class HistorySummaryItem(BaseModel):
@@ -136,6 +144,7 @@ class HistorySummaryItem(BaseModel):
     pipeline_metrics: PipelineMetrics
     top_keywords: List[KeywordMetric]
     pain_points: List[PainPointItem]
+    top_questions: List[Dict[str, Any]] = Field(default_factory=list)
 
 
 class TrendPoint(BaseModel):
@@ -164,6 +173,7 @@ class PlatformComparisonMetric(BaseModel):
     negative_pct: float
     neutral_pct: float
     mixed_pct: float
+    question_pct: float = 0.0
     avg_confidence: float
     rating_variance: float
     top_pain_point: str

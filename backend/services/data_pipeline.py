@@ -209,13 +209,16 @@ class DataProcessingPipeline:
                 negative_count=0,
                 neutral_count=0,
                 mixed_count=0,
+                question_count=0,
                 positive_pct=0.0,
                 negative_pct=0.0,
                 neutral_pct=0.0,
                 mixed_pct=0.0,
+                question_pct=0.0,
                 primary_positive_pct=0.0,
                 primary_negative_pct=0.0,
                 primary_neutral_pct=0.0,
+                primary_question_pct=0.0,
             )
             empty_metrics = PipelineMetrics(
                 raw_fetched_count=cleaning_stats.get("raw_fetched_count", 0),
@@ -243,16 +246,19 @@ class DataProcessingPipeline:
         neg_count = int(sum(1 for lbl in labels if lbl == "Negative"))
         neu_count = int(sum(1 for lbl in labels if lbl == "Neutral"))
         mix_count = int(sum(1 for lbl in labels if lbl == "Mixed"))
+        que_count = int(sum(1 for lbl in labels if lbl == "Question"))
 
         pos_pct = float(np.round((pos_count / total) * 100.0, 1))
         neg_pct = float(np.round((neg_count / total) * 100.0, 1))
         neu_pct = float(np.round((neu_count / total) * 100.0, 1))
         mix_pct = float(np.round((mix_count / total) * 100.0, 1))
+        que_pct = float(np.round((que_count / total) * 100.0, 1))
 
-        # 3-way primary breakdown (Positive / Negative / Neutral+Mixed) for executive cards
+        # Primary breakdown for executive cards
         primary_pos = pos_pct
         primary_neg = neg_pct
-        primary_neu = float(np.round(100.0 - (primary_pos + primary_neg), 1))
+        primary_que = que_pct
+        primary_neu = float(np.round(max(0.0, 100.0 - (primary_pos + primary_neg + primary_que)), 1))
 
         # Map [-1.0, +1.0] sentiment scores onto a [1.0, 5.0] star-rating scale to compute rating variance
         star_equivalent = 3.0 + (scores_arr * 2.0)
@@ -267,13 +273,16 @@ class DataProcessingPipeline:
             negative_count=neg_count,
             neutral_count=neu_count,
             mixed_count=mix_count,
+            question_count=que_count,
             positive_pct=pos_pct,
             negative_pct=neg_pct,
             neutral_pct=neu_pct,
             mixed_pct=mix_pct,
+            question_pct=que_pct,
             primary_positive_pct=primary_pos,
             primary_negative_pct=primary_neg,
             primary_neutral_pct=max(0.0, primary_neu),
+            primary_question_pct=primary_que,
         )
 
         metrics = PipelineMetrics(

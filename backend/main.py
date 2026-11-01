@@ -136,6 +136,17 @@ def _run_analysis_pipeline(
     raw_reach = int(metadata.get("post_reach", 0)) or int(round(raw_views * 0.82))
     raw_followers = int(metadata.get("author_followers", 0))
 
+    questions_list = [
+        {
+            "question": c.cleaned_text,
+            "author": c.author,
+            "category": c.question_category or "General Inquiry",
+            "likes": c.likes,
+        }
+        for c in classified_comments
+        if c.sentiment == "Question"
+    ][:15]
+
     result = AnalysisResult(
         id=str(uuid.uuid4())[:12],
         platform=req.platform,
@@ -159,6 +170,7 @@ def _run_analysis_pipeline(
         pain_points=pain_points,
         critical_feedback=critical_list[:8],
         comments=classified_comments,
+        top_questions=questions_list,
     )
     db.save_analysis(result)
     return result
@@ -410,13 +422,16 @@ def get_aggregated_stats(
             negative_count=0,
             neutral_count=0,
             mixed_count=0,
+            question_count=0,
             positive_pct=0.0,
             negative_pct=0.0,
             neutral_pct=0.0,
             mixed_pct=0.0,
+            question_pct=0.0,
             primary_positive_pct=0.0,
             primary_negative_pct=0.0,
             primary_neutral_pct=0.0,
+            primary_question_pct=0.0,
         )
         empty_reach = ReachOverviewMetrics(
             total_followers=0,
@@ -487,26 +502,31 @@ def get_aggregated_stats(
     neg_total = sum(r.sentiment_breakdown.negative_count for r in filtered_records)
     neu_total = sum(r.sentiment_breakdown.neutral_count for r in filtered_records)
     mix_total = sum(r.sentiment_breakdown.mixed_count for r in filtered_records)
+    que_total = sum(getattr(r.sentiment_breakdown, 'question_count', 0) for r in filtered_records)
 
-    denom = max(pos_total + neg_total + neu_total + mix_total, 1)
+    denom = max(pos_total + neg_total + neu_total + mix_total + que_total, 1)
     pos_pct = float(np.round((pos_total / denom) * 100.0, 1))
     neg_pct = float(np.round((neg_total / denom) * 100.0, 1))
     neu_pct = float(np.round((neu_total / denom) * 100.0, 1))
     mix_pct = float(np.round((mix_total / denom) * 100.0, 1))
-    prim_neu_pct = float(np.round(100.0 - (pos_pct + neg_pct), 1))
+    que_pct = float(np.round((que_total / denom) * 100.0, 1))
+    prim_neu_pct = float(np.round(max(0.0, 100.0 - (pos_pct + neg_pct + que_pct)), 1))
 
     agg_breakdown = SentimentBreakdown(
         positive_count=pos_total,
         negative_count=neg_total,
         neutral_count=neu_total,
         mixed_count=mix_total,
+        question_count=que_total,
         positive_pct=pos_pct,
         negative_pct=neg_pct,
         neutral_pct=neu_pct,
         mixed_pct=mix_pct,
+        question_pct=que_pct,
         primary_positive_pct=pos_pct,
         primary_negative_pct=neg_pct,
         primary_neutral_pct=max(0.0, prim_neu_pct),
+        primary_question_pct=que_pct,
     )
 
     # Aggregate all individual comments for NumPy statistical distribution & recent stream
@@ -563,7 +583,8 @@ def get_aggregated_stats(
         p_neg = sum(r.sentiment_breakdown.negative_count for r in p_recs)
         p_neu = sum(r.sentiment_breakdown.neutral_count for r in p_recs)
         p_mix = sum(r.sentiment_breakdown.mixed_count for r in p_recs)
-        p_denom = max(p_pos + p_neg + p_neu + p_mix, 1)
+        p_que = sum(getattr(r.sentiment_breakdown, 'question_count', 0) for r in p_recs)
+        p_denom = max(p_pos + p_neg + p_neu + p_mix + p_que, 1)
         p_conf = (
             float(
                 np.round(
@@ -600,6 +621,7 @@ def get_aggregated_stats(
             negative_pct=float(np.round((p_neg / p_denom) * 100.0, 1)),
             neutral_pct=float(np.round((p_neu / p_denom) * 100.0, 1)),
             mixed_pct=float(np.round((p_mix / p_denom) * 100.0, 1)),
+            question_pct=float(np.round((p_que / p_denom) * 100.0, 1)),
             avg_confidence=p_conf,
             rating_variance=p_var,
             top_pain_point=top_pp,

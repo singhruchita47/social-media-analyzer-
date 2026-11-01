@@ -236,16 +236,34 @@ class TwitterRoBERTaEngine:
 
 ADVANCED_SYSTEM_PROMPT = """You are an elite Multilingual Social Media Sentiment & Linguistic Intelligence AI specializing in YouTube and Instagram comment streams.
 
-CRITICAL LINGUISTIC & SARCASM RULES:
-1. DECODE SARCASM & IRONY STRICTLY AS NEGATIVE:
+CRITICAL LINGUISTIC, SARCASM & QUESTION RULES:
+1. DEDICATED QUESTION / INQUIRY DETECTION:
+   - When a comment is asking a question, inquiry, doubt, price check, availability, usage advice, or link request (e.g., "Price kitna hai?", "Ye India me milega kya?", "Link please", "Oily skin pe chalega?", "Can someone tell me how to fix this?", "How much does it cost?", "When will this be back in stock?", "Which shade is best for fair skin?"):
+   - You MUST classify it STRICTLY as "Question" (NEVER "Neutral" and NEVER "Negative").
+   - Set score to a slightly inquisitive neutral value between +0.05 and +0.15.
+   - Set `intent` to "Question".
+   - Set `question_category` to one of:
+     * "Pricing & Buying Inquiry"
+     * "Product Usage & Compatibility"
+     * "Delivery & Shipping Status"
+     * "Purchase Link & Availability"
+     * "General Customer Question"
+   - Do NOT treat questions asking about price as negative complaints (e.g. "Price kitna hai?" is a Question, NOT a Price Problem!).
+   - Set `pain_point` to null for questions.
+
+2. DECODE SARCASM & IRONY STRICTLY AS NEGATIVE:
    - Detect hidden human intent, mockery, irony, and sarcastic phrasing.
-   - If a comment uses surface-level praise words ("wow", "great", "amazing", "best", "genius", "thank you so much", "waah", "kya baat hai", "shabash", "masterpiece") or applause/clown/eye-roll emojis ([EMOJI:clapping_applause], [EMOJI:clown_face_mockery_sarcasm_negative], [EMOJI:eye_roll_sarcastic_negative]) to mock a failure, delay, high price, defect, or bad content (e.g., "Wow what a 'great' product, broke in 2 days!", "Thank you so much for delivering my order 3 weeks late!", "Waah kya kamaal ki ghatiya service hai", "Best waste of money ever"), you MUST classify it STRICTLY as "Negative" (NEVER Positive or Mixed) with a negative score between -0.75 and -0.98.
-2. DEEP HINGLISH, HINDI & INTERNET SLANG UNDERSTANDING:
+   - If a comment uses surface-level praise words ("wow", "great", "amazing", "best", "genius", "thank you so much", "waah", "kya baat hai", "shabash", "masterpiece") or applause/clown/eye-roll emojis ([EMOJI:clapping_applause], [EMOJI:clown_face_mockery_sarcasm_negative], [EMOJI:eye_roll_sarcastic_negative]) to mock a failure, delay, high price, defect, or bad content (e.g., "Wow what a 'great' product, broke in 2 days!", "Thank you so much for delivering my order 3 weeks late!", "Waah kya kamaal ki ghatiya service hai", "Best waste of money ever", "Great job delivering a broken box 👏🤡"), you MUST classify it STRICTLY as "Negative" (NEVER Positive or Mixed) with a negative score between -0.75 and -0.98.
+   - Set `is_sarcastic` to true and `intent` to "Sarcastic Complaint".
+
+3. DEEP HINGLISH, HINDI & INTERNET SLANG UNDERSTANDING:
    - Seamlessly process mixed Hindi-English (Hinglish), Romanized Hindi, Devanagari script, and Gen-Z/internet slang (e.g., "paisa barbaad", "bekar", "bakwaas", "mehnga", "der se aaya", "chapri", "faltu", "paisa vasool", "op", "badiya", "mast", "zabardast", "ye product bht achha hai par price high hai").
    - Interpret demojized emoji tokens (e.g., [EMOJI:fire_enthusiasm_positive], [EMOJI:clown_face_mockery_sarcasm_negative], [EMOJI:loudly_crying_upset]) in context with the surrounding text.
-3. CONTRASTIVE ("YES, BUT...") FEEDBACK:
-   - Only when a comment genuinely praises one attribute while raising a real complaint about another without sarcasm (e.g., "Quality is good, but delivery was very late" or "Product bht achha hai par price high hai"), classify as "Mixed" and set `pain_point` to the exact customer problem.
-4. ROOT-CAUSE PAIN POINTS:
+
+4. CONTRASTIVE ("YES, BUT...") FEEDBACK:
+   - Only when a comment genuinely praises one attribute while raising a real complaint about another without sarcasm (e.g., "Quality is good, but delivery was very late" or "Product bht achha hai par price high hai"), classify as "Mixed", set `intent` to "Mixed Feedback", and set `pain_point` to the exact customer problem.
+
+5. ROOT-CAUSE PAIN POINTS:
    - For every "Negative" or "Mixed" comment, assign `pain_point` to one of:
      * "Price Problem (High Cost)"
      * "Delivery Problem (Late Shipping)"
@@ -254,31 +272,41 @@ CRITICAL LINGUISTIC & SARCASM RULES:
      * "Customer Support / Refund Issue"
      * "Quantity / Sizing / Stock Issue"
      * "General Customer Dissatisfaction"
-   - For "Positive" or "Neutral" comments, set `pain_point` to null.
-5. OUTPUT FORMAT:
+   - For "Positive", "Neutral", or "Question" comments, set `pain_point` to null.
+
+6. OUTPUT FORMAT:
    - Return ONLY valid, raw JSON matching this exact structure (no markdown fences, no extra prose):
 {
   "overall_sentiment_percentages": {
-    "positive_pct": 60.0,
-    "negative_pct": 25.0,
-    "neutral_pct": 10.0,
+    "positive_pct": 50.0,
+    "negative_pct": 20.0,
+    "question_pct": 18.0,
+    "neutral_pct": 7.0,
     "mixed_pct": 5.0
   },
   "classifications": [
     {
       "id": "comment_id_here",
-      "sentiment": "Positive|Negative|Neutral|Mixed",
-      "score": -0.85,
+      "sentiment": "Positive|Negative|Neutral|Mixed|Question",
+      "score": 0.05,
       "confidence": 0.96,
-      "is_sarcastic": true,
-      "pain_point": "Quality / Product Issue",
-      "keywords": ["quality", "broken"],
-      "is_critical": true
+      "is_sarcastic": false,
+      "intent": "Question|Sarcastic Complaint|Appreciation|Direct Complaint|Mixed Feedback|General",
+      "question_category": "Pricing & Buying Inquiry|Product Usage & Compatibility|Delivery & Shipping Status|Purchase Link & Availability|General Customer Question",
+      "pain_point": null,
+      "keywords": ["price", "inquiry"],
+      "is_critical": false
+    }
+  ],
+  "top_questions": [
+    {
+      "question": "Price kitna hai?",
+      "category": "Pricing & Buying Inquiry"
     }
   ],
   "top_pain_points": ["Price Problem (High Cost)", "Delivery Problem (Late Shipping)"],
-  "top_keywords": ["quality", "price", "delivery"],
-  "executive_summary": "2-sentence executive summary of audience sentiment, sarcasm/Hinglish nuances, and primary customer pain points.",
+  "top_keywords": ["quality", "price", "delivery", "skin"],
+  "executive_summary": "2-sentence executive summary of audience sentiment, sarcasm/Hinglish nuances, and primary customer pain points and inquiries.",
   "actionable_insights": [
     "Actionable recommendation 1",
     "Actionable recommendation 2",
@@ -292,6 +320,59 @@ SARCASM_PATTERNS = [
     re.compile(r"['\"](great|amazing|best|premium|fast|quality)['\"]", re.IGNORECASE),
     re.compile(r"\b(sooo+ good that|such a great .* that it broke|best waste of money|paisa barbaad करने का best tarika)\b", re.IGNORECASE),
 ]
+
+# Multilingual Question & Interrogative Triggers (Hindi, Hinglish, and English)
+QUESTION_TRIGGERS_REGEX = re.compile(
+    r"(\?|"
+    r"\b(kya|kaise|kab|kitna|kitne|kitni|kahan|kaha|kidhar|konsa|kaunsa|konsi|kaunsi|kis|kisko|kispe)\b|"
+    r"\b(batao|bata do|bataiye|bhai bata|milega kya|chalega kya|aayega kya|hota hai kya|available hai|kaha milega|kahan milega)\b|"
+    r"\b(how|what|where|when|why|which|who|whose|can i|could you|is this|is it|does it|will it|would it|should i)\b|"
+    r"\b(anyone know|please tell|link please|link do|link de do|send link|price\?|rate\?|cost\?|shade\?|code\?)\b)",
+    re.IGNORECASE,
+)
+
+def detect_question_intent(lower_text: str) -> Optional[Tuple[str, str]]:
+    """
+    Identifies if a comment in English, Hindi, or Hinglish is a genuine customer question/inquiry.
+    Returns (question_category, topic_keyword) or None if not an inquiry.
+    """
+    # Exclude angry rhetorical insults disguised as questions (e.g., "dimaag kharab hai kya?")
+    if any(s in lower_text for s in (
+        "dimaag kharab", "dimag kharab", "chutiya", "pagal hai kya",
+        "are you blind", "are you crazy", "are you deaf", "sharam hai kya",
+    )):
+        return None
+
+    if not QUESTION_TRIGGERS_REGEX.search(lower_text):
+        return None
+
+    # Sub-categorize the question
+    if any(w in lower_text for w in (
+        "price", "cost", "rate", "discount", "offer", "coupon", "code",
+        "kitna", "kitne", "kitni", "mehenga", "mehnga", "buy", "order",
+        "flipkart", "amazon", "purchase", "paisa", "paise", "rupaye", "rs", "₹",
+    )):
+        return ("Pricing & Buying Inquiry", "price inquiry")
+
+    if any(w in lower_text for w in (
+        "link", "link please", "link do", "send link", "kaha se", "kahan se",
+        "kaha milega", "kahan milega", "website", "where to buy", "available", "store",
+    )):
+        return ("Purchase Link & Availability", "link request")
+
+    if any(w in lower_text for w in (
+        "skin", "oily", "dry", "sensitive", "shade", "hair", "battery", "backup",
+        "work", "chalega", "suit", "daily", "kaise use", "how to use", "routine",
+        "side effect", "ingredients", "safe",
+    )):
+        return ("Product Usage & Compatibility", "usage query")
+
+    if any(w in lower_text for w in (
+        "delivery", "shipping", "deliver", "kab tak", "der se", "courier", "tracking", "status", "reach",
+    )):
+        return ("Delivery & Shipping Query", "delivery query")
+
+    return ("General Customer Question", "customer query")
 
 STOPWORDS = {
     "the", "and", "for", "that", "this", "with", "you", "not", "are", "from",
@@ -503,13 +584,15 @@ class SentimentNLPEngine:
     Advanced Multilingual AI/NLP Engine supporting:
     1. Anthropic Claude 3.5 Sonnet (`claude-3-5-sonnet-20241022`)
     2. OpenAI GPT-4o (`gpt-4o`)
-    3. Google Gemini (`gemini-1.5-flash`)
-    4. Deep Sarcasm, Emoji Demojization & Hinglish Semantic Fallback Engine
+    3. Groq Llama 3.3 70B (`llama-3.3-70b-versatile` / `llama-3.1-8b-instant`) - Ultra-fast Free Tier Alternative
+    4. Google Gemini (`gemini-3.5-flash-lite`) with Multi-Key Quota Rotation Pool
+    5. High-Precision Local Semantic & Interrogative Question Matrix Engine (100% Offline Resilience)
     """
 
     def __init__(self) -> None:
         self.roberta_engine = TwitterRoBERTaEngine()
         self.deepmoji_engine = DeepMojiEmotionEngine()
+        self._gemini_key_idx = 0
         self._reload_env()
 
     def _reload_env(self) -> None:
@@ -520,8 +603,26 @@ class SentimentNLPEngine:
         self.claude_model = os.getenv("ANTHROPIC_MODEL", "claude-3-5-sonnet-20241022").strip()
         self.openai_api_key = os.getenv("OPENAI_API_KEY", "").strip()
         self.openai_model = os.getenv("OPENAI_MODEL", "gpt-4o").strip()
+        self.groq_api_key = os.getenv("GROQ_API_KEY", "").strip()
+        self.groq_model = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile").strip()
         self.api_key = os.getenv("GEMINI_API_KEY", "").strip()
         self.model_name = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite").strip()
+
+        # Multi-key rotation pool for Gemini (e.g. GEMINI_API_KEYS=key1,key2,key3 or comma-separated in GEMINI_API_KEY)
+        raw_keys = os.getenv("GEMINI_API_KEYS") or os.getenv("GEMINI_API_KEY", "")
+        self.gemini_keys = [
+            k.strip() for k in raw_keys.split(",")
+            if k.strip() and not k.strip().startswith("your_") and len(k.strip()) > 15
+        ]
+
+    def _get_active_gemini_key(self) -> str:
+        if self.gemini_keys:
+            return self.gemini_keys[self._gemini_key_idx % len(self.gemini_keys)]
+        return self.api_key
+
+    def _rotate_gemini_key(self) -> None:
+        if len(self.gemini_keys) > 1:
+            self._gemini_key_idx = (self._gemini_key_idx + 1) % len(self.gemini_keys)
 
     def _has_valid_anthropic_key(self) -> bool:
         return bool(
@@ -539,12 +640,18 @@ class SentimentNLPEngine:
             and openai is not None
         )
 
+    def _has_valid_groq_key(self) -> bool:
+        return bool(
+            self.groq_api_key
+            and not self.groq_api_key.startswith("your_")
+            and len(self.groq_api_key) > 15
+        )
+
     def _has_valid_gemini_key(self) -> bool:
         return bool(
-            self.api_key
-            and not self.api_key.startswith("your_")
-            and len(self.api_key) > 15
-            and genai is not None
+            (self.gemini_keys or self.api_key)
+            and not self._get_active_gemini_key().startswith("your_")
+            and len(self._get_active_gemini_key()) > 15
         )
 
     def analyze_dataframe(
@@ -580,12 +687,19 @@ class SentimentNLPEngine:
                 if openai_result is not None:
                     return openai_result
 
-            # 3. Tertiary: Google Gemini (gemini-1.5-flash)
+            # 3. Groq Llama 3.3 70B (Fast, Free, Exceptional Multi-lingual/Hinglish accuracy)
+            if self._has_valid_groq_key():
+                groq_result = self._analyze_with_groq(records, platform, post_title)
+                if groq_result is not None:
+                    return groq_result
+
+            # 4. Google Gemini with Multi-Key Rotation Pool (prevents 429 quota exhaustion)
             if self._has_valid_gemini_key():
                 gemini_result = self._analyze_with_gemini(records, platform, post_title)
                 if gemini_result is not None:
                     return gemini_result
 
+        # 5. High-Precision Local Semantic & Interrogative Question Matrix Engine
         return self._analyze_with_semantic_engine(records, platform, post_title)
 
     def _build_llm_user_prompt(
@@ -642,16 +756,22 @@ class SentimentNLPEngine:
             if cid in cls_map:
                 c_info = cls_map[cid]
                 lbl = c_info.get("sentiment", "Neutral")
-                if lbl not in ("Positive", "Negative", "Neutral", "Mixed"):
+                if lbl not in ("Positive", "Negative", "Neutral", "Mixed", "Question"):
                     lbl = "Neutral"
-                # Enforce strict sarcasm rule: if LLM flagged is_sarcastic=True, force Negative
-                if c_info.get("is_sarcastic") is True:
+                is_sarc = bool(c_info.get("is_sarcastic") is True)
+                if is_sarc:
                     lbl = "Negative"
-                score = float(c_info.get("score", -0.8 if lbl == "Negative" else 0.0))
+                intent = str(c_info.get("intent", "Question" if lbl == "Question" else ("Sarcastic Complaint" if is_sarc else "General")))
+                q_cat = c_info.get("question_category")
+                if lbl == "Question" and not q_cat:
+                    q_res = detect_question_intent(r["cleaned_text"].lower())
+                    q_cat = q_res[0] if q_res else "General Customer Question"
+
+                score = float(c_info.get("score", -0.85 if lbl == "Negative" else (0.08 if lbl == "Question" else 0.0)))
                 if lbl == "Negative" and score > -0.2:
-                    score = -0.82
-                conf = float(c_info.get("confidence", 0.94))
-                pain = c_info.get("pain_point")
+                    score = -0.85
+                conf = float(c_info.get("confidence", 0.95))
+                pain = c_info.get("pain_point") if lbl != "Question" else None
                 if lbl in ("Negative", "Mixed") and not pain:
                     pain = detect_customer_problem(
                         r["cleaned_text"].lower(),
@@ -679,6 +799,9 @@ class SentimentNLPEngine:
                         pain_point=pain,
                         keywords=kws,
                         is_critical=crit,
+                        is_sarcastic=is_sarc,
+                        intent=intent,
+                        question_category=q_cat,
                     )
                 )
             else:
@@ -777,7 +900,7 @@ class SentimentNLPEngine:
         except Exception:
             return None
 
-    def _analyze_with_gemini(
+    def _analyze_with_groq(
         self,
         records: List[Dict[str, Any]],
         platform: str,
@@ -792,96 +915,120 @@ class SentimentNLPEngine:
             str,
         ]
     ]:
-        """Calls Google Gemini with direct REST / SDK support, chunking comments across batches to analyze ALL comments with maximum accuracy."""
-        if not self.api_key:
+        """Calls Groq Cloud API with Llama-3.3-70B-Versatile (100% Free, Fast & Highly Accurate)."""
+        if not self._has_valid_groq_key():
             return None
+        try:
+            chunk_size = 40
+            all_cls_map: Dict[str, Dict[str, Any]] = {}
+            exec_summary = ""
+            insights: List[str] = []
+            total_to_process = min(len(records), 200)
 
-        # Process in batches of 40 to avoid token cutoff and analyze up to 200 comments with Gemini
-        chunk_size = 40
-        all_cls_map: Dict[str, Dict[str, Any]] = {}
-        exec_summary = ""
-        insights: List[str] = []
-
-        total_to_process = min(len(records), 200)
-
-        for i in range(0, total_to_process, chunk_size):
-            chunk = records[i : i + chunk_size]
-            batch_input = [
-                {
-                    "id": str(r["comment_id"]),
-                    "text": r.get("demojized_text") or demojize_with_feelings(r["cleaned_text"]),
+            for i in range(0, total_to_process, chunk_size):
+                chunk = records[i : i + chunk_size]
+                batch_input = [
+                    {
+                        "id": str(r["comment_id"]),
+                        "text": r.get("demojized_text") or demojize_with_feelings(r["cleaned_text"]),
+                    }
+                    for r in chunk
+                ]
+                user_prompt = (
+                    f"Platform: {platform.upper()} | Post: {post_title}\n"
+                    f"Batch {i//chunk_size + 1}: Analyze the following {len(batch_input)} comments.\n"
+                    "CRITICAL: If a comment is asking a question/inquiry/price check/link/doubt, classify sentiment as 'Question'.\n"
+                    "If a sentence is sarcastic/complaining (even with happy emojis), classify sentiment as 'Negative'.\n"
+                    "Return valid JSON matching the schema specified in your system instructions:\n\n"
+                    f"{json.dumps(batch_input, ensure_ascii=False)}"
+                )
+                headers = {
+                    "Authorization": f"Bearer {self.groq_api_key}",
+                    "Content-Type": "application/json",
                 }
-                for r in chunk
-            ]
-            user_prompt = (
-                f"Platform: {platform.upper()} | Video/Post Title: {post_title}\n"
-                f"Batch {i//chunk_size + 1}: Analyze the following {len(batch_input)} comments.\n"
-                "CRITICAL: If a sentence is negative, complaining, broken, delay, or sarcastic (even if emojis are happy like 👏, 🎉, 🙃, 🙄, 🤡, 😂), classify sentiment as 'Negative'.\n"
-                "Return valid JSON matching the schema specified in your system instructions:\n\n"
-                f"{json.dumps(batch_input, ensure_ascii=False)}"
-            )
-
-            # Try direct REST endpoint first for resilience and speed
-            parsed_chunk = None
-            try:
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model_name}:generateContent?key={self.api_key}"
                 payload = {
-                    "systemInstruction": {"parts": [{"text": ADVANCED_SYSTEM_PROMPT}]},
-                    "contents": [{"parts": [{"text": user_prompt}]}],
-                    "generationConfig": {"temperature": 0.1, "responseMimeType": "application/json"},
+                    "model": self.groq_model,
+                    "temperature": 0.1,
+                    "response_format": {"type": "json_object"},
+                    "messages": [
+                        {"role": "system", "content": ADVANCED_SYSTEM_PROMPT},
+                        {"role": "user", "content": user_prompt},
+                    ],
                 }
-                resp = requests.post(url, json=payload, timeout=25)
+                resp = requests.post(
+                    "https://api.groq.com/openai/v1/chat/completions",
+                    headers=headers,
+                    json=payload,
+                    timeout=25,
+                )
                 if resp.status_code == 200:
                     data = resp.json()
-                    candidates = data.get("candidates", [])
-                    if candidates:
-                        raw_json_str = candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "")
-                        parsed_chunk = json.loads(raw_json_str)
-            except Exception:
-                pass
+                    choices = data.get("choices", [])
+                    if choices:
+                        raw_c = choices[0].get("message", {}).get("content", "")
+                        parsed_chunk = json.loads(raw_c)
+                        for item in parsed_chunk.get("classifications", []):
+                            if isinstance(item, dict) and "id" in item:
+                                all_cls_map[str(item["id"])] = item
+                        if not exec_summary and parsed_chunk.get("executive_summary"):
+                            exec_summary = parsed_chunk["executive_summary"]
+                        if not insights and parsed_chunk.get("actionable_insights"):
+                            insights = parsed_chunk["actionable_insights"]
 
-            if not parsed_chunk and genai is not None:
-                try:
-                    genai.configure(api_key=self.api_key)
-                    model = genai.GenerativeModel(
-                        model_name=self.model_name,
-                        system_instruction=ADVANCED_SYSTEM_PROMPT,
-                    )
-                    resp = model.generate_content(user_prompt)
-                    raw_text = resp.text.strip()
-                    m = re.search(r"\{.*\}", raw_text, re.DOTALL)
-                    if m:
-                        parsed_chunk = json.loads(m.group(0))
-                except Exception:
-                    pass
+            if not all_cls_map:
+                return None
 
-            if parsed_chunk and isinstance(parsed_chunk, dict):
-                for item in parsed_chunk.get("classifications", []):
-                    if isinstance(item, dict) and "id" in item:
-                        all_cls_map[str(item["id"])] = item
-                if not exec_summary and parsed_chunk.get("executive_summary"):
-                    exec_summary = parsed_chunk["executive_summary"]
-                if not insights and parsed_chunk.get("actionable_insights"):
-                    insights = parsed_chunk["actionable_insights"]
-
-        if not all_cls_map:
+            return self._build_items_from_cls_map(
+                all_cls_map,
+                records,
+                platform,
+                post_title,
+                exec_summary,
+                insights,
+                f"Groq Cloud AI ({self.groq_model})",
+            )
+        except Exception:
             return None
 
+    def _build_items_from_cls_map(
+        self,
+        all_cls_map: Dict[str, Dict[str, Any]],
+        records: List[Dict[str, Any]],
+        platform: str,
+        post_title: str,
+        exec_summary: str,
+        insights: List[str],
+        engine_label: str,
+    ) -> Tuple[
+        List[CommentItem],
+        List[KeywordMetric],
+        List[PainPointItem],
+        str,
+        List[str],
+        str,
+    ]:
         comments: List[CommentItem] = []
         for r in records:
             cid = str(r["comment_id"])
             if cid in all_cls_map:
                 c_info = all_cls_map[cid]
                 lbl = c_info.get("sentiment", "Neutral")
-                if lbl not in ("Positive", "Negative", "Neutral", "Mixed"):
+                if lbl not in ("Positive", "Negative", "Neutral", "Mixed", "Question"):
                     lbl = "Neutral"
-                if c_info.get("is_sarcastic") is True:
+                is_sarc = bool(c_info.get("is_sarcastic") is True)
+                if is_sarc:
                     lbl = "Negative"
-                score = float(c_info.get("score", -0.85 if lbl == "Negative" else 0.0))
+                intent = str(c_info.get("intent", "Question" if lbl == "Question" else ("Sarcastic Complaint" if is_sarc else "General")))
+                q_cat = c_info.get("question_category")
+                if lbl == "Question" and not q_cat:
+                    q_res = detect_question_intent(r["cleaned_text"].lower())
+                    q_cat = q_res[0] if q_res else "General Customer Question"
+
+                score = float(c_info.get("score", -0.85 if lbl == "Negative" else (0.08 if lbl == "Question" else 0.0)))
                 if lbl == "Negative" and score > -0.2:
                     score = -0.85
                 conf = float(c_info.get("confidence", 0.95))
-                pain = c_info.get("pain_point")
+                pain = c_info.get("pain_point") if lbl != "Question" else None
                 if lbl in ("Negative", "Mixed") and not pain:
                     pain = detect_customer_problem(
                         r["cleaned_text"].lower(),
@@ -909,6 +1056,9 @@ class SentimentNLPEngine:
                         pain_point=pain,
                         keywords=kws,
                         is_critical=crit,
+                        is_sarcastic=is_sarc,
+                        intent=intent,
+                        question_category=q_cat,
                     )
                 )
             else:
@@ -927,6 +1077,115 @@ class SentimentNLPEngine:
             pain_points,
             exec_summary,
             insights,
+            engine_label,
+        )
+
+    def _analyze_with_gemini(
+        self,
+        records: List[Dict[str, Any]],
+        platform: str,
+        post_title: str,
+    ) -> Optional[
+        Tuple[
+            List[CommentItem],
+            List[KeywordMetric],
+            List[PainPointItem],
+            str,
+            List[str],
+            str,
+        ]
+    ]:
+        """Calls Google Gemini with direct REST / SDK support, chunking comments across batches to analyze ALL comments with maximum accuracy."""
+        active_key = self._get_active_gemini_key()
+        if not active_key:
+            return None
+
+        chunk_size = 40
+        all_cls_map: Dict[str, Dict[str, Any]] = {}
+        exec_summary = ""
+        insights: List[str] = []
+
+        total_to_process = min(len(records), 200)
+
+        for i in range(0, total_to_process, chunk_size):
+            chunk = records[i : i + chunk_size]
+            batch_input = [
+                {
+                    "id": str(r["comment_id"]),
+                    "text": r.get("demojized_text") or demojize_with_feelings(r["cleaned_text"]),
+                }
+                for r in chunk
+            ]
+            user_prompt = (
+                f"Platform: {platform.upper()} | Video/Post Title: {post_title}\n"
+                f"Batch {i//chunk_size + 1}: Analyze the following {len(batch_input)} comments.\n"
+                "CRITICAL: If a comment is asking a question/inquiry/price check/link/doubt, classify sentiment as 'Question'.\n"
+                "If a sentence is negative, complaining, broken, delay, or sarcastic (even if emojis are happy like 👏, 🎉, 🙃, 🙄, 🤡, 😂), classify sentiment as 'Negative'.\n"
+                "Return valid JSON matching the schema specified in your system instructions:\n\n"
+                f"{json.dumps(batch_input, ensure_ascii=False)}"
+            )
+
+            parsed_chunk = None
+            # Retry with multi-key pool rotation if quota/rate-limited (HTTP 429)
+            attempts = max(1, len(self.gemini_keys))
+            for _ in range(attempts):
+                current_k = self._get_active_gemini_key()
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model_name}:generateContent?key={current_k}"
+                payload = {
+                    "systemInstruction": {"parts": [{"text": ADVANCED_SYSTEM_PROMPT}]},
+                    "contents": [{"parts": [{"text": user_prompt}]}],
+                    "generationConfig": {"temperature": 0.1, "responseMimeType": "application/json"},
+                }
+                try:
+                    resp = requests.post(url, json=payload, timeout=25)
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        candidates = data.get("candidates", [])
+                        if candidates:
+                            raw_json_str = candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+                            parsed_chunk = json.loads(raw_json_str)
+                            break
+                    elif resp.status_code == 429:
+                        # Rotate to next fresh key in pool!
+                        self._rotate_gemini_key()
+                        continue
+                except Exception:
+                    pass
+
+            if not parsed_chunk and genai is not None:
+                try:
+                    genai.configure(api_key=self._get_active_gemini_key())
+                    model = genai.GenerativeModel(
+                        model_name=self.model_name,
+                        system_instruction=ADVANCED_SYSTEM_PROMPT,
+                    )
+                    resp = model.generate_content(user_prompt)
+                    raw_text = resp.text.strip()
+                    m = re.search(r"\{.*\}", raw_text, re.DOTALL)
+                    if m:
+                        parsed_chunk = json.loads(m.group(0))
+                except Exception:
+                    pass
+
+            if parsed_chunk and isinstance(parsed_chunk, dict):
+                for item in parsed_chunk.get("classifications", []):
+                    if isinstance(item, dict) and "id" in item:
+                        all_cls_map[str(item["id"])] = item
+                if not exec_summary and parsed_chunk.get("executive_summary"):
+                    exec_summary = parsed_chunk["executive_summary"]
+                if not insights and parsed_chunk.get("actionable_insights"):
+                    insights = parsed_chunk["actionable_insights"]
+
+        if not all_cls_map:
+            return None
+
+        return self._build_items_from_cls_map(
+            all_cls_map,
+            records,
+            platform,
+            post_title,
+            exec_summary,
+            insights,
             f"Google Gemini ({self.model_name}) + DeepMoji",
         )
 
@@ -943,6 +1202,35 @@ class SentimentNLPEngine:
 
         if any(lk in lower or lk in text for lk in ("🔗", "🖇", "लिंक", "link", "pp")):
             extracted_kws.append("link")
+
+        # 1. Question / Inquiry Detection First (English, Hindi & Hinglish)
+        q_info = detect_question_intent(lower)
+        is_rhetorical_insult = any(
+            pat.search(text) for pat in SARCASM_PATTERNS
+        ) or any(s_em in text for s_em in ("🤡", "🙃", "🙄", "😒"))
+
+        if q_info and not is_rhetorical_insult:
+            q_category, q_kw = q_info
+            if q_kw not in extracted_kws:
+                extracted_kws.append(q_kw)
+            return CommentItem(
+                comment_id=record["comment_id"],
+                author=record["author"],
+                platform=platform,
+                raw_text=record["raw_text"],
+                cleaned_text=text,
+                likes=int(record.get("likes", 0)),
+                published_at=record.get("published_at", ""),
+                sentiment="Question",
+                sentiment_score=0.08,
+                confidence=0.96,
+                pain_point=None,
+                keywords=extracted_kws[:4],
+                is_critical=False,
+                is_sarcastic=False,
+                intent="Question",
+                question_category=q_category,
+            )
 
         # Negation-aware check (e.g. "not oily", "no whitecast", "zero breakouts" are POSITIVE!)
         negated_positives = (
@@ -1022,33 +1310,40 @@ class SentimentNLPEngine:
         sentiment: SentimentLabel = "Neutral"
         score = 0.0
         confidence = 0.89
+        intent = "General"
 
         if is_sarcastic:
             sentiment = "Negative"
             score = -0.88
             confidence = 0.96
+            intent = "Sarcastic Complaint"
         elif pos_hits and neg_hits and has_contrast:
             sentiment = "Mixed"
             score = round((pos_sum + neg_sum) / max(len(pos_hits) + len(neg_hits), 1), 3)
             if score == 0.0:
                 score = -0.22
             confidence = 0.94
+            intent = "Mixed Feedback"
         elif pos_hits and neg_hits and abs(neg_sum) >= 0.65:
             sentiment = "Mixed"
             score = round((pos_sum + neg_sum) * 0.45, 3)
             confidence = 0.91
+            intent = "Mixed Feedback"
         elif pos_sum > abs(neg_sum) * 1.2 and pos_sum >= 0.45:
             sentiment = "Positive"
             score = min(0.98, round(0.45 + (pos_sum / (len(pos_hits) + 1.2)) * 0.5, 3))
             confidence = min(0.98, round(0.86 + min(len(pos_hits), 4) * 0.03, 3))
+            intent = "Appreciation"
         elif abs(neg_sum) > pos_sum * 1.1 and abs(neg_sum) >= 0.45:
             sentiment = "Negative"
             score = max(-0.98, round(-0.45 + (neg_sum / (len(neg_hits) + 1.2)) * 0.5, 3))
             confidence = min(0.97, round(0.86 + min(len(neg_hits), 4) * 0.03, 3))
+            intent = "Direct Complaint"
         else:
             sentiment = "Neutral"
-            score = 0.05 if "?" not in text else 0.0
+            score = 0.0
             confidence = 0.85
+            intent = "General"
 
         pain_point = detect_customer_problem(lower, tokens, sentiment)
 
@@ -1076,6 +1371,9 @@ class SentimentNLPEngine:
             pain_point=pain_point,
             keywords=extracted_kws[:4],
             is_critical=is_critical,
+            is_sarcastic=is_sarcastic,
+            intent=intent,
+            question_category=None,
         )
 
     def _analyze_with_semantic_engine(
@@ -1205,14 +1503,16 @@ class SentimentNLPEngine:
         pos = sum(1 for c in comments if c.sentiment == "Positive")
         neg = sum(1 for c in comments if c.sentiment == "Negative")
         mix = sum(1 for c in comments if c.sentiment == "Mixed")
+        que = sum(1 for c in comments if c.sentiment == "Question")
         pos_pct = round((pos / total) * 100)
         neg_pct = round((neg / total) * 100)
+        que_pct = round((que / total) * 100)
         kw_names = ", ".join(k.word for k in top_keywords[:4]) or "quality, price, delivery"
 
         return (
             f"Analysis of {total} cleaned {platform.capitalize()} comments on '{post_title}' reveals "
-            f"{pos_pct}% positive feedback alongside {neg_pct}% negative and {mix} mixed ('Yes, But...') responses. "
-            f"Key topics include {kw_names}."
+            f"{pos_pct}% positive feedback, {neg_pct}% negative complaints, {que_pct}% customer inquiries/questions ({que} queries), "
+            f"and {mix} mixed ('Yes, But...') responses. Key topics include {kw_names}."
         )
 
     def _build_actionable_insights(

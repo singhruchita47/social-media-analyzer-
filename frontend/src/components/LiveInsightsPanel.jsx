@@ -41,6 +41,12 @@ const STATUS_CONFIG = {
     emoji: '😐',
     shortLabel: 'Neutral',
   },
+  Question: {
+    pill: 'bg-[#EFF6FF] text-[#1D4ED8] dark:bg-blue-500/15 dark:text-blue-300 border-[#BFDBFE] dark:border-blue-500/30',
+    bar: 'from-[#60A5FA] to-[#1D4ED8]',
+    emoji: '❓',
+    shortLabel: 'Question / Inquiry',
+  },
 };
 
 const AVATAR_GRADIENTS = [
@@ -135,6 +141,35 @@ function analyzeCommentRootCause(comment) {
       lower
     ) ||
     (!hasNegatedPositive && /\b(oily|sticky|whitecast|greasy|dry|rough)\b/i.test(lower));
+
+  // 1. Dedicated Question & Inquiry Handling
+  if (sentiment === 'Question' || comment.intent === 'Question' || comment.question_category) {
+    const qCat = comment.question_category || 'Customer Question / Inquiry';
+    return {
+      sentiment: 'Question',
+      problemKey: 'none',
+      badge: `❓ ${qCat}`,
+      badgeClass:
+        'bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30',
+      reason: `Customer Inquiry: ${qCat}`,
+      likedClause: null,
+      problemClause: null,
+    };
+  }
+
+  // 2. Strict Sarcastic Complaint Badge
+  if (comment.is_sarcastic || comment.intent === 'Sarcastic Complaint') {
+    return {
+      sentiment: 'Negative',
+      problemKey: hasPriceProblem ? 'price' : hasDeliveryProblem ? 'delivery' : hasQualityProblem ? 'quality' : 'other_issue',
+      badge: '🎭 Sarcastic Complaint',
+      badgeClass:
+        'bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/30',
+      reason: comment.pain_point || 'Sarcastic irony / disguised customer complaint',
+      likedClause,
+      problemClause,
+    };
+  }
 
   // If comment has a clear problem + contrastive clause, ensure it's treated as Mixed/Negative
   if (
@@ -314,6 +349,7 @@ export default function LiveInsightsPanel({
       Negative: 0,
       Mixed: 0,
       Neutral: 0,
+      Question: 0,
       any_problem: 0,
       price: 0,
       delivery: 0,
@@ -666,6 +702,12 @@ export default function LiveInsightsPanel({
                 label: 'Mixed ("Yes, But…")',
                 emoji: '🤔',
                 cnt: counts.Mixed,
+              },
+              {
+                id: 'Question',
+                label: 'Questions / Queries',
+                emoji: '❓',
+                cnt: counts.Question || 0,
               },
               {
                 id: 'Neutral',

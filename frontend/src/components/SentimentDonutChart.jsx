@@ -27,7 +27,7 @@ export default function SentimentDonutChart({ stats, darkMode, onSelectSentiment
 
   const hasData = totalComments > 0;
 
-  // Exact Sociafy Donut Palette (Warm Orange, Fresh Mint Green, Sky Cyan)
+  // Exact Sociafy Donut Palette (Warm Orange, Fresh Mint Green, Sky Cyan, Royal Blue for Questions)
   const chartData = hasData
     ? [
         {
@@ -37,6 +37,17 @@ export default function SentimentDonutChart({ stats, darkMode, onSelectSentiment
           pct: Math.round(bd.primary_positive_pct ?? 0),
           color: '#F48245',
         },
+        ...(bd.question_count > 0
+          ? [
+              {
+                name: 'Question',
+                label: 'Customer Inquiries',
+                value: bd.question_count,
+                pct: Math.round(bd.primary_question_pct ?? 0),
+                color: '#3B82F6',
+              },
+            ]
+          : []),
         {
           name: 'Neutral',
           label: 'Neutral / Mixed',
@@ -70,6 +81,17 @@ export default function SentimentDonutChart({ stats, darkMode, onSelectSentiment
       color: '#F48245',
       textColor: 'text-[#9A3412]',
     },
+    ...(hasData && (bd.question_count || 0) > 0
+      ? [
+          {
+            name: 'Question',
+            label: 'Questions / Inquiries',
+            pct: Math.round(bd.primary_question_pct ?? 0),
+            color: '#3B82F6',
+            textColor: 'text-[#1D4ED8]',
+          },
+        ]
+      : []),
     {
       name: 'Neutral',
       label: 'Neutral / Mixed',
