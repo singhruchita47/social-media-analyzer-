@@ -1,11 +1,9 @@
 import React from 'react';
 import {
-  Search,
   Sun,
   Moon,
   Youtube,
   Instagram,
-  X,
   Download,
   Share2,
   PanelLeftClose,
@@ -34,8 +32,8 @@ export default function TopBar({
           : 'bg-white/95 border-slate-100 backdrop-blur-md'
       }`}
     >
-      {/* Left: Sidebar Toggle Button + Pill Search Bar */}
-      <div className="flex items-center gap-3 flex-1 max-w-xl">
+      {/* Left: Sidebar Toggle Button */}
+      <div className="flex items-center gap-3">
         {onToggleSidebar && (
           <button
             onClick={onToggleSidebar}
@@ -67,41 +65,6 @@ export default function TopBar({
             )}
           </button>
         )}
-
-        <div className="relative flex-1">
-          <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={`Search ${
-              selectedPlatform === 'youtube' ? 'YouTube' : 'Instagram'
-            } comments, @authors, or keywords...`}
-            className={`w-full pl-11 pr-14 py-2.5 rounded-full text-xs font-medium border outline-none transition ${
-              darkMode
-                ? 'bg-slate-950 border-slate-800 text-slate-100 placeholder:text-slate-500 focus:border-orange-500'
-                : 'bg-[#F6F7FB] border-slate-200/80 text-slate-700 placeholder:text-slate-400 focus:bg-white focus:border-orange-400'
-            }`}
-          />
-          {searchQuery ? (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          ) : (
-            <span
-              className={`absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] font-semibold px-1.5 py-0.5 rounded border ${
-                darkMode
-                  ? 'bg-slate-900 border-slate-700 text-slate-400'
-                  : 'bg-white border-slate-200 text-slate-400'
-              }`}
-            >
-              ⌘F
-            </span>
-          )}
-        </div>
       </div>
 
       {/* Right Controls: Strictly Separate YouTube vs Instagram Switcher */}
