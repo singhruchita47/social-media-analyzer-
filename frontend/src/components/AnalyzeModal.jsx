@@ -3,6 +3,7 @@ import {
   X,
   Youtube,
   Instagram,
+  ShoppingBag,
   Sparkles,
   Loader2,
   CheckCircle2,
@@ -37,13 +38,15 @@ export default function AnalyzeModal({
       setPlatform('instagram');
     } else if (lower.includes('youtube.com') || lower.includes('youtu.be')) {
       setPlatform('youtube');
+    } else if (lower.includes('flipkart.com') || lower.includes('dl.flipkart.com')) {
+      setPlatform('flipkart');
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!postUrl.trim()) {
-      setErrorMsg('Please paste a valid YouTube or Instagram link.');
+      setErrorMsg('Please paste a valid YouTube, Instagram, or Flipkart link.');
       return;
     }
     setErrorMsg('');
@@ -84,10 +87,10 @@ export default function AnalyzeModal({
           </div>
           <div>
             <h2 className="text-lg font-extrabold">
-              Analyze YouTube or Instagram Link
+              Analyze Social or E-Commerce Link
             </h2>
             <p className="text-xs text-slate-400">
-              Select platform and paste your video, Short, Post, or Reel link
+              Select YouTube, Instagram, or Flipkart to fetch & analyze reviews/comments
             </p>
           </div>
         </div>
@@ -98,11 +101,11 @@ export default function AnalyzeModal({
             <label className="block text-xs font-bold text-slate-500 mb-1.5">
               Choose Platform
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
                 onClick={() => setPlatform('youtube')}
-                className={`py-2.5 px-4 rounded-xl border flex items-center justify-center gap-2 text-xs font-bold transition ${
+                className={`py-2 px-3 rounded-xl border flex items-center justify-center gap-1.5 text-xs font-bold transition ${
                   platform === 'youtube'
                     ? 'bg-red-500 text-white border-red-500 shadow-sm'
                     : darkMode
@@ -110,14 +113,14 @@ export default function AnalyzeModal({
                     : 'bg-[#F6F7FB] border-slate-200 text-slate-600'
                 }`}
               >
-                <Youtube className="w-4 h-4" />
+                <Youtube className="w-4 h-4 text-white" />
                 YouTube
               </button>
 
               <button
                 type="button"
                 onClick={() => setPlatform('instagram')}
-                className={`py-2.5 px-4 rounded-xl border flex items-center justify-center gap-2 text-xs font-bold transition ${
+                className={`py-2 px-3 rounded-xl border flex items-center justify-center gap-1.5 text-xs font-bold transition ${
                   platform === 'instagram'
                     ? 'bg-gradient-to-r from-orange-500 to-pink-500 text-white border-pink-500 shadow-sm'
                     : darkMode
@@ -128,13 +131,28 @@ export default function AnalyzeModal({
                 <Instagram className="w-4 h-4" />
                 Instagram
               </button>
+
+              <button
+                type="button"
+                onClick={() => setPlatform('flipkart')}
+                className={`py-2 px-3 rounded-xl border flex items-center justify-center gap-1.5 text-xs font-bold transition ${
+                  platform === 'flipkart'
+                    ? 'bg-[#2874F0] text-white border-blue-600 shadow-sm'
+                    : darkMode
+                    ? 'bg-slate-950 border-slate-800 text-slate-400'
+                    : 'bg-[#F6F7FB] border-slate-200 text-slate-600'
+                }`}
+              >
+                <ShoppingBag className="w-4 h-4 text-amber-300" />
+                Flipkart
+              </button>
             </div>
           </div>
 
           {/* Post URL */}
           <div>
             <label className="block text-xs font-bold text-slate-500 mb-1.5">
-              Paste {platform === 'youtube' ? 'YouTube' : 'Instagram'} Link *
+              Paste {platform === 'youtube' ? 'YouTube' : platform === 'instagram' ? 'Instagram' : 'Flipkart'} Link *
             </label>
             <input
               type="text"
@@ -143,7 +161,9 @@ export default function AnalyzeModal({
               placeholder={
                 platform === 'youtube'
                   ? 'https://www.youtube.com/watch?v=... or /shorts/...'
-                  : 'https://www.instagram.com/p/... or /reel/...'
+                  : platform === 'instagram'
+                  ? 'https://www.instagram.com/p/... or /reel/...'
+                  : 'https://www.flipkart.com/.../p/itm... or product link'
               }
               autoFocus
               className={`w-full px-4 py-3 rounded-xl text-sm border outline-none transition ${
@@ -158,7 +178,7 @@ export default function AnalyzeModal({
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="text-xs font-bold text-slate-500">
-                Comments Fetch Limit
+                {platform === 'flipkart' ? 'Reviews Fetch Limit' : 'Comments Fetch Limit'}
               </label>
               <span className="text-xs font-extrabold text-orange-500">
                 {maxComments >= 10000
@@ -193,7 +213,9 @@ export default function AnalyzeModal({
             </div>
 
             <p className="text-[11px] text-slate-400">
-              API multi-page token pagination will fetch up to {maxComments.toLocaleString()} comments (100% of all comments if video has fewer).
+              {platform === 'flipkart'
+                ? `Scraping & pagination will fetch verified Flipkart product reviews up to ${maxComments.toLocaleString()} reviews.`
+                : `API multi-page token pagination will fetch up to ${maxComments.toLocaleString()} comments (100% of all comments if video has fewer).`}
             </p>
           </div>
 
@@ -218,18 +240,20 @@ export default function AnalyzeModal({
               className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold text-white shadow-md transition disabled:opacity-50 ${
                 platform === 'youtube'
                   ? 'bg-gradient-to-r from-red-500 to-rose-600 shadow-red-500/25 hover:opacity-95'
-                  : 'bg-gradient-to-r from-[#F469A9] to-[#F47A38] shadow-pink-500/25 hover:opacity-95'
+                  : platform === 'instagram'
+                  ? 'bg-gradient-to-r from-[#F469A9] to-[#F47A38] shadow-pink-500/25 hover:opacity-95'
+                  : 'bg-gradient-to-r from-[#2874F0] to-[#1258ca] shadow-blue-500/25 hover:opacity-95'
               }`}
             >
               {isAnalyzing ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Analyzing Comments...
+                  {platform === 'flipkart' ? 'Analyzing Reviews...' : 'Analyzing Comments...'}
                 </>
               ) : (
                 <>
                   <CheckCircle2 className="w-4 h-4" />
-                  Run Reach & Comment Analysis
+                  {platform === 'flipkart' ? 'Run Flipkart Review Analysis' : 'Run Reach & Comment Analysis'}
                 </>
               )}
             </button>

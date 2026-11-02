@@ -2,6 +2,7 @@ import React from 'react';
 import {
   Youtube,
   Instagram,
+  ShoppingBag,
   Clock,
   ThumbsUp,
   MessageSquare,
@@ -35,7 +36,7 @@ export default function HistoryView({
             Analyzed Posts History (SQLite Storage)
           </h2>
           <p className="text-xs text-slate-400 mt-0.5">
-            Persistent record of all analyzed YouTube videos and Instagram posts, reach/engagement metrics, and sentiment breakdowns
+            Persistent record of all analyzed YouTube videos, Instagram posts, and Flipkart products, reach/engagement metrics, and sentiment breakdowns
           </p>
         </div>
 
@@ -83,11 +84,15 @@ export default function HistoryView({
                         className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold ${
                           item.platform === 'youtube'
                             ? 'bg-red-500/10 text-red-600'
+                            : item.platform === 'flipkart'
+                            ? 'bg-blue-500/10 text-[#2874F0]'
                             : 'bg-pink-500/10 text-pink-600'
                         }`}
                       >
                         {item.platform === 'youtube' ? (
                           <Youtube className="w-3.5 h-3.5" />
+                        ) : item.platform === 'flipkart' ? (
+                          <ShoppingBag className="w-3.5 h-3.5" />
                         ) : (
                           <Instagram className="w-3.5 h-3.5" />
                         )}

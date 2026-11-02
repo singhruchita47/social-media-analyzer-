@@ -24,16 +24,29 @@ def extract_post_id(platform: str, post_url: str) -> str:
         return "yt_" + hashlib.md5(cleaned.encode("utf-8")).hexdigest()[:9]
 
     # Instagram (supports /p/, /reel/, /reels/, /tv/, and /username/reel/SHORTCODE)
-    ig_patterns = [
-        r"instagram\.com\/(?:[a-zA-Z0-9._]+\/)?(?:p|reel|reels|tv)\/([a-zA-Z0-9_-]+)",
-    ]
-    for pattern in ig_patterns:
-        match = re.search(pattern, cleaned)
-        if match:
-            return match.group(1)
-    if re.match(r"^[a-zA-Z0-9_-]{5,25}$", cleaned):
-        return cleaned
-    return "ig_" + hashlib.md5(cleaned.encode("utf-8")).hexdigest()[:9]
+    if platform == "instagram":
+        ig_patterns = [
+            r"instagram\.com\/(?:[a-zA-Z0-9._]+\/)?(?:p|reel|reels|tv)\/([a-zA-Z0-9_-]+)",
+        ]
+        for pattern in ig_patterns:
+            match = re.search(pattern, cleaned)
+            if match:
+                return match.group(1)
+        if re.match(r"^[a-zA-Z0-9_-]{5,25}$", cleaned):
+            return cleaned
+        return "ig_" + hashlib.md5(cleaned.encode("utf-8")).hexdigest()[:9]
+
+    # Flipkart (supports /p/itm... or pid=... or product-reviews/itm...)
+    if platform == "flipkart":
+        fk_item_match = re.search(r"/(?:p|product-reviews)/(itm[a-zA-Z0-9]+)", cleaned)
+        if fk_item_match:
+            return fk_item_match.group(1)
+        pid_match = re.search(r"pid=([A-Z0-9]+)", cleaned)
+        if pid_match:
+            return pid_match.group(1)
+        return "fk_" + hashlib.md5(cleaned.encode("utf-8")).hexdigest()[:9]
+
+    return "post_" + hashlib.md5(cleaned.encode("utf-8")).hexdigest()[:9]
 
 
 # Curated high-realism comment pools for YouTube & Instagram product/creator launches
@@ -129,6 +142,43 @@ INSTAGRAM_SCENARIOS = [
     },
 ]
 
+FLIPKART_SCENARIOS = [
+    {
+        "title": "boAt Airdopes 141 Bluetooth Headset (Bold Black, True Wireless)",
+        "handle": "Flipkart Verified Seller (Imagine Marketing)",
+        "comments": [
+            ("Amezing sound quality and battery backup is easily 42 hours! Value for money.", "@rohit_kumar_delhi", 45),
+            ("Quality is good, but delivery was very late. Ordered on Monday arrived next week.", "@ankit_sharma_up", 18),
+            ("Price is very high compared to festival sale, wait for Big Billion Days.", "@tech_deals_india", 9),
+            ("Left earbud stopped charging after 20 days. Worst quality and pathetic customer support.", "@priya_singh_patna", 32),
+            ("Mic quality is superb for office calls and gaming latency is very low.", "@gaming_pro_rahul", 14),
+            ("Delivery package was completely torn and open from one side, please improve packaging.", "@suresh_v_chennai", 27),
+            ("Is this compatible with iPhone 15? please tell battery percentage shows on ios?", "@apple_user_sam", 5),
+            ("Super fast 1-day delivery by Flipkart Plus and genuine sealed product!", "@divya_mumbai", 22),
+            ("Bass is decent for this price range. Build quality feels sturdy in hand.", "@music_lover_amit", 11),
+            ("Noise cancellation is not working properly in outdoor traffic.", "@vikas_noida", 8),
+            ("Loved the design and matte black finish. Type-C fast charging is a blessing.", "@sneha_bengaluru", 16),
+            ("Overpriced for plastic build, but sound and treble are crisp.", "@deepak_jaipur", 7),
+        ],
+    },
+    {
+        "title": "Apple iPhone 15 (Black, 128 GB) — Super Retina XDR Display",
+        "handle": "Flipkart SuperComNet Seller",
+        "comments": [
+            ("Amezing camera and all over best phone👌 portrait mode is mindblowing.", "@nikhil_gadget_hub", 92),
+            ("Switch from OnePlus to iPhone I am stunned with camera performance. Everything is perfect on iPhone 15.", "@vikram_aditya", 78),
+            ("Using this Iphone 15 from 1month and it has best Camera and display clarity.", "@meena_patel_guj", 64),
+            ("Great for photography nd videography. Especially inbuilt 2x zoom helps a lot.", "@shivam_clicks", 51),
+            ("Awesome photography experience. Battery backup is good. Display is much better than 14 version.", "@harshit_delhi", 43),
+            ("Quality is good, but delivery was very late. Flipkart took 6 days to deliver in metro city.", "@kavita_mumbai", 39),
+            ("Battery drains fast when using 5G and camera continuously for 1 hour.", "@tech_insider_raj", 28),
+            ("Price is very high in India compared to US or Dubai, but 48MP camera quality is top tier.", "@arjun_nair_kochi", 35),
+            ("Got open box delivery, verified IMEI and serial number. 100% genuine sealed Apple product.", "@mohit_punjab", 41),
+            ("Does it heat up during 4K 60fps video recording in summer?", "@roshan_vlogger", 12),
+        ],
+    },
+]
+
 # Intentional noise/spam pool so Pandas data cleaning pipeline removes realistic duplicates, emoji spam, and bots
 NOISE_AND_SPAM_POOL = [
     ("🔥🔥🔥💯💯🙌🙌✨", "@emoji_spammer_01", 1),
@@ -213,7 +263,13 @@ class SocialCommentFetcher:
             if live_ig is not None:
                 return live_ig
 
-        # 4. Rich sandbox handler for reliable demo/offline/sandbox execution
+        # 4. Live Flipkart E-Commerce Product Reviews Scraper
+        if platform == "flipkart" or "flipkart.com" in post_url.lower():
+            fk_result = self._fetch_flipkart_live(post_id, post_url, post_title, max_comments)
+            if fk_result is not None:
+                return fk_result
+
+        # 5. Rich sandbox handler for reliable demo/offline/sandbox execution
         return self._generate_sandbox_comments(
             platform, post_id, post_url, post_title, max_comments
         )
@@ -608,6 +664,155 @@ class SocialCommentFetcher:
         }
         return metadata, raw_comments
 
+    def _fetch_flipkart_live(
+        self,
+        item_id: str,
+        post_url: str,
+        post_title: Optional[str],
+        max_comments: int,
+    ) -> Optional[Tuple[Dict[str, Any], List[Dict[str, Any]]]]:
+        """
+        Direct Live Flipkart Product Reviews Scraper.
+        Extracts verified customer reviews, ratings, and product information across multiple pages.
+        """
+        try:
+            from bs4 import BeautifulSoup
+            from urllib.parse import urlparse, parse_qs
+
+            parsed = urlparse(post_url)
+            path = parsed.path
+            qs = parse_qs(parsed.query)
+
+            # Transform product page URL to product-reviews URL
+            reviews_path = re.sub(r"/p/(itm[a-zA-Z0-9]+)", r"/product-reviews/\1", path)
+            if "/product-reviews/" not in reviews_path:
+                reviews_path = reviews_path.rstrip("/") + "/product-reviews/"
+
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+                "Accept-Language": "en-US,en;q=0.9",
+                "Cache-Control": "no-cache",
+            }
+
+            raw_comments: List[Dict[str, Any]] = []
+            product_title = post_title
+            seller_handle = "Flipkart Verified Seller"
+            total_ratings_count = 1000
+            total_reviews_count = 500
+
+            target_limit = max(10, min(max_comments, 2000))
+            max_pages = min(40, (target_limit // 6) + 3)
+
+            for page in range(1, max_pages + 1):
+                params_list = []
+                if "pid" in qs:
+                    params_list.append("pid=" + qs["pid"][0])
+                params_list.append("page=" + str(page))
+
+                page_url = "https://www.flipkart.com" + reviews_path + "?" + "&".join(params_list)
+
+                try:
+                    resp = requests.get(page_url, headers=headers, timeout=12)
+                    if resp.status_code != 200:
+                        break
+
+                    soup = BeautifulSoup(resp.text, "html.parser")
+
+                    # Extract title & ratings from page 1
+                    if page == 1:
+                        if not product_title and soup.title:
+                            title_text = soup.title.text
+                            product_title = title_text.split("Reviews:")[0].strip()
+
+                        rating_match = re.search(
+                            r"([\d,]+)\s+ratings\s+and\s+([\d,]+)\s+reviews",
+                            resp.text,
+                            re.IGNORECASE,
+                        )
+                        if rating_match:
+                            try:
+                                total_ratings_count = int(rating_match.group(1).replace(",", ""))
+                                total_reviews_count = int(rating_match.group(2).replace(",", ""))
+                            except Exception:
+                                pass
+
+                    # Extract review spans
+                    spans = soup.find_all("span", class_="css-1jxf684")
+                    page_reviews_count = 0
+
+                    for s in spans:
+                        txt = s.text.strip()
+                        if len(txt) > 20 and not any(
+                            skip in txt
+                            for skip in [
+                                "ratings and",
+                                "Reviews:",
+                                "Price in India",
+                                "Flipkart",
+                                "Everything in",
+                                "All your travel",
+                            ]
+                        ):
+                            # Extract author & rating near the element
+                            parent = s.find_parent("div", class_="fWi7J_") or s.find_parent("div")
+                            author_name = "Flipkart Buyer"
+                            likes_val = 5
+                            if parent:
+                                p_text = parent.text
+                                rat_m = re.search(r"([1-5])\s*\.?\s*0?★?", p_text)
+                                if rat_m:
+                                    try:
+                                        likes_val = int(rat_m.group(1))
+                                    except Exception:
+                                        pass
+                                auth_m = re.search(r"([A-Za-z\s]+)\s+Certified\s+Buyer", p_text)
+                                if auth_m:
+                                    author_name = auth_m.group(1).strip()
+
+                            raw_comments.append(
+                                {
+                                    "comment_id": f"fk_{len(raw_comments)+1}",
+                                    "author": f"@{author_name.replace(' ', '')}",
+                                    "raw_text": txt,
+                                    "likes": likes_val,
+                                    "published_at": (
+                                        datetime.utcnow() - timedelta(days=len(raw_comments) // 2)
+                                    ).isoformat()
+                                    + "Z",
+                                }
+                            )
+                            page_reviews_count += 1
+                            if len(raw_comments) >= target_limit:
+                                break
+
+                    if page_reviews_count == 0 or len(raw_comments) >= target_limit:
+                        break
+
+                except Exception:
+                    break
+
+            if not raw_comments:
+                return None
+
+            title = product_title or f"Flipkart Product ({item_id})"
+
+            metadata = {
+                "platform": "flipkart",
+                "post_id": item_id,
+                "post_url": post_url,
+                "post_title": title,
+                "author_handle": seller_handle,
+                "view_count": total_ratings_count * 15,
+                "post_reach": total_ratings_count * 12,
+                "author_followers": total_ratings_count,
+                "video_like_count": total_reviews_count,
+                "source_mode": "Flipkart E-Commerce Reviews Scraper (Live)",
+            }
+            return metadata, raw_comments
+        except Exception:
+            return None
+
     def _build_custom_payload(
         self,
         platform: str,
@@ -649,7 +854,12 @@ class SocialCommentFetcher:
         seed_val = int(hashlib.md5(f"{platform}:{post_id}".encode("utf-8")).hexdigest()[:8], 16)
         rng = random.Random(seed_val)
 
-        scenarios = YOUTUBE_SCENARIOS if platform == "youtube" else INSTAGRAM_SCENARIOS
+        if platform == "flipkart":
+            scenarios = FLIPKART_SCENARIOS
+        elif platform == "youtube":
+            scenarios = YOUTUBE_SCENARIOS
+        else:
+            scenarios = INSTAGRAM_SCENARIOS
         chosen_scenario = scenarios[seed_val % len(scenarios)]
 
         title = post_title or chosen_scenario["title"]
@@ -701,7 +911,9 @@ class SocialCommentFetcher:
             "post_title": title,
             "author_handle": handle,
             "source_mode": (
-                "YouTube Data API v3 Sandbox"
+                "Flipkart Reviews Sandbox"
+                if platform == "flipkart"
+                else "YouTube Data API v3 Sandbox"
                 if platform == "youtube"
                 else "Instagram Graph API Sandbox"
             ),

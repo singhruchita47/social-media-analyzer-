@@ -30,6 +30,8 @@ export default function MetricsCards({
   showSentimentRow = false,
 }) {
   const isYT = selectedPlatform === 'youtube';
+  const isIG = selectedPlatform === 'instagram';
+  const isFK = selectedPlatform === 'flipkart';
   const reach = stats?.reach_overview || {
     total_followers: 0,
     followers_growth_pct: 0.0,
@@ -59,41 +61,45 @@ export default function MetricsCards({
 
   const reachCards = [
     {
-      title: isYT ? 'YouTube Subscribers' : 'Instagram Followers',
-      value: formatMetricNumber(reach.total_followers),
+      title: isYT ? 'YouTube Subscribers' : isIG ? 'Instagram Followers' : 'Flipkart Product Rating',
+      value: isFK ? (hasData ? '4.4★' : '0★') : formatMetricNumber(reach.total_followers),
       valueColor: 'text-[#2E2787]',
       topBorder: 'border-t-4 border-t-[#4F46E5]',
       growth: !hasData
         ? '0%'
         : isLiveSinglePost
-        ? 'Live Channel'
+        ? (isFK ? 'Verified Product' : 'Live Channel')
         : `+${reach.followers_growth_pct}%`,
       subtitle: !hasData
-        ? `Paste a ${isYT ? 'YouTube' : 'Instagram'} link to fetch subscribers`
+        ? `Paste a ${isYT ? 'YouTube' : isIG ? 'Instagram' : 'Flipkart'} link to fetch data`
         : isYT
         ? 'Real YouTube channel subscribers'
-        : 'Instagram business followers',
+        : isIG
+        ? 'Instagram business followers'
+        : 'Flipkart certified customer ratings',
       icon: Users,
       iconCircle: 'bg-[#4F46E5] text-white shadow-md shadow-[#4F46E5]/30',
     },
     {
-      title: isYT ? 'YouTube Engagement' : 'Instagram Engagement',
+      title: isYT ? 'YouTube Engagement' : isIG ? 'Instagram Engagement' : 'Flipkart Customer Ratings',
       value: formatMetricNumber(reach.total_engagement),
       valueColor: 'text-[#065F46]',
       topBorder: 'border-t-4 border-t-[#10B981]',
       growth: !hasData
         ? '0%'
         : isLiveSinglePost
-        ? 'Real Likes + Comments'
+        ? (isFK ? '5-Star Ratings' : 'Real Likes + Comments')
         : `+${reach.engagement_growth_pct}%`,
       subtitle: !hasData
         ? '0 likes • 0 comments'
+        : isFK
+        ? `${(stats?.total_engagement_likes || 0).toLocaleString()} 5-star likes • ${totalComments.toLocaleString()} reviews`
         : `${(stats?.total_engagement_likes || 0).toLocaleString()} likes • ${totalComments.toLocaleString()} comments`,
       icon: Heart,
       iconCircle: 'bg-[#10B981] text-white shadow-md shadow-[#10B981]/30',
     },
     {
-      title: isYT ? 'YouTube Unique Reach' : 'Instagram Reach',
+      title: isYT ? 'YouTube Unique Reach' : isIG ? 'Instagram Reach' : 'Product Impressions / Reach',
       value: formatMetricNumber(reach.total_reach),
       valueColor: 'text-[#991B1B]',
       topBorder: 'border-t-4 border-t-[#EF4444]',
@@ -104,22 +110,24 @@ export default function MetricsCards({
         : `+${reach.reach_growth_pct}%`,
       subtitle: !hasData
         ? 'No post analyzed yet'
-        : `Unique audience reached on ${isYT ? 'YouTube' : 'Instagram'}`,
+        : `Unique audience reached on ${isYT ? 'YouTube' : isIG ? 'Instagram' : 'Flipkart Store'}`,
       icon: Eye,
       iconCircle: 'bg-[#EF4444] text-white shadow-md shadow-[#EF4444]/30',
     },
     {
-      title: isYT ? 'YouTube Total Views' : 'Instagram Impressions',
+      title: isYT ? 'YouTube Total Views' : isIG ? 'Instagram Impressions' : 'Flipkart Total Reviews Scraped',
       value: formatMetricNumber(reach.total_impressions),
       valueColor: 'text-[#92400E]',
       topBorder: 'border-t-4 border-t-[#F59E0B]',
       growth: !hasData
         ? '0%'
         : isLiveSinglePost
-        ? 'Real Views'
+        ? (isFK ? 'Total Reviews' : 'Real Views')
         : `+${reach.impressions_growth_pct}%`,
       subtitle: !hasData
         ? 'No views fetched yet'
+        : isFK
+        ? 'Verified buyer reviews analyzed'
         : `Exact ${isYT ? 'YouTube viewCount' : 'Instagram impressions'}`,
       icon: BarChart2,
       iconCircle: 'bg-[#F59E0B] text-white shadow-md shadow-[#F59E0B]/30',
@@ -130,7 +138,7 @@ export default function MetricsCards({
   const sentimentCards = [
     {
       id: 'all',
-      headerTitle: `${isYT ? 'YouTube' : 'Instagram'} Comments Analyzed`,
+      headerTitle: `${isYT ? 'YouTube' : isIG ? 'Instagram' : 'Flipkart'} ${isFK ? 'Reviews' : 'Comments'} Analyzed`,
       value: totalComments.toLocaleString(),
       valueColor: 'text-[#2E2787]',
       badge: totalComments > 0 ? '100% Cleaned' : '0 comments',

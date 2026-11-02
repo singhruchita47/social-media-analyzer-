@@ -4,6 +4,7 @@ import {
   ShieldAlert,
   Youtube,
   Instagram,
+  ShoppingBag,
   ThumbsUp,
   CheckCircle2,
   Sparkles,
@@ -1028,6 +1029,8 @@ export default function LiveInsightsPanel({
                             <span className="inline-flex items-center gap-1 text-[10px] text-slate-400">
                               {c.platform === 'youtube' ? (
                                 <Youtube className="w-3 h-3 text-red-500" />
+                              ) : c.platform === 'flipkart' ? (
+                                <ShoppingBag className="w-3 h-3 text-[#2874F0]" />
                               ) : (
                                 <Instagram className="w-3 h-3 text-pink-500" />
                               )}

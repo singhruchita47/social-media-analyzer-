@@ -28,6 +28,7 @@ import {
   MessageSquareHeart,
   Youtube,
   Instagram,
+  ShoppingBag,
   Eye,
   FileText,
 } from 'lucide-react';
@@ -259,6 +260,8 @@ export default function App() {
       : stats;
 
   const isYT = selectedPlatform === 'youtube';
+  const isIG = selectedPlatform === 'instagram';
+  const isFK = selectedPlatform === 'flipkart';
 
   return (
     <div
@@ -370,17 +373,17 @@ export default function App() {
                   <div className="flex flex-wrap items-center gap-2">
                     <span
                       className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase text-white ${
-                        isYT ? 'bg-red-500' : 'bg-[#F469A9]'
+                        isYT ? 'bg-red-500' : isIG ? 'bg-[#F469A9]' : 'bg-[#2874F0]'
                       }`}
                     >
-                      Live Analyzed {isYT ? 'YouTube Short / Video' : 'Instagram Post'}
+                      Live Analyzed {isYT ? 'YouTube Short / Video' : isIG ? 'Instagram Post' : 'Flipkart Product'}
                     </span>
-                    <span className={`text-xs font-bold ${isYT ? 'text-red-600' : 'text-pink-600'}`}>
+                    <span className={`text-xs font-bold ${isYT ? 'text-red-600' : isIG ? 'text-pink-600' : 'text-[#2874F0]'}`}>
                       {activeSingleAnalysis.author_handle}
                     </span>
                     <span className="text-xs font-bold text-emerald-600 flex items-center gap-1">
                       <Eye className="w-3.5 h-3.5" />
-                      {(activeSingleAnalysis.video_views || 0).toLocaleString()} Real Views
+                      {(activeSingleAnalysis.video_views || 0).toLocaleString()} {isFK ? 'Ratings & Reviews' : 'Real Views'}
                     </span>
                   </div>
                   <h3
@@ -398,7 +401,7 @@ export default function App() {
                 <div className="flex items-center gap-2 shrink-0">
                   <button
                     onClick={handleExportPDF}
-                    title="Export Full Video PDF Analysis Report with Creator Details & Comments"
+                    title="Export Full Analysis PDF Report with Details & Comments"
                     className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-sm hover:from-orange-600 hover:to-amber-600 transition"
                   >
                     <FileText className="w-3.5 h-3.5" />
@@ -410,17 +413,19 @@ export default function App() {
                       className={`px-4 py-2 rounded-full text-xs font-bold text-white shadow-sm hover:opacity-95 ${
                         isYT
                           ? 'bg-gradient-to-r from-red-500 to-rose-600'
-                          : 'bg-gradient-to-r from-[#F469A9] to-[#F47A38]'
+                          : isIG
+                          ? 'bg-gradient-to-r from-[#F469A9] to-[#F47A38]'
+                          : 'bg-gradient-to-r from-[#2874F0] to-[#1258ca]'
                       }`}
                     >
-                      View {activeSingleAnalysis.total_comments} Comments Analysis →
+                      View {activeSingleAnalysis.total_comments} {isFK ? 'Reviews' : 'Comments'} Analysis →
                     </button>
                   )}
                   <button
                     onClick={() => setActiveSingleAnalysis(null)}
                     className="px-3.5 py-2 rounded-full text-xs font-bold bg-white text-slate-700 border border-slate-200 hover:bg-slate-100 shadow-sm"
                   >
-                    Show All {isYT ? 'YouTube' : 'Instagram'} Posts
+                    Show All {isYT ? 'YouTube' : isIG ? 'Instagram' : 'Flipkart'} Items
                   </button>
                 </div>
               </div>
@@ -438,13 +443,17 @@ export default function App() {
                     className={`w-10 h-10 rounded-2xl flex items-center justify-center text-white shadow-md ${
                       isYT
                         ? 'bg-gradient-to-tr from-red-500 to-rose-600 shadow-red-500/20'
-                        : 'bg-gradient-to-tr from-[#F47A38] via-[#F469A9] to-[#8B80F9] shadow-pink-500/20'
+                        : isIG
+                        ? 'bg-gradient-to-tr from-[#F47A38] via-[#F469A9] to-[#8B80F9] shadow-pink-500/20'
+                        : 'bg-gradient-to-tr from-[#2874F0] to-[#1258ca] shadow-blue-500/20'
                     }`}
                   >
                     {isYT ? (
                       <Youtube className="w-5 h-5" />
-                    ) : (
+                    ) : isIG ? (
                       <Instagram className="w-5 h-5" />
+                    ) : (
+                      <ShoppingBag className="w-5 h-5 text-amber-300" />
                     )}
                   </span>
                   <div>
@@ -455,12 +464,16 @@ export default function App() {
                     >
                       {isYT
                         ? 'YouTube Real Reach & Analytics Dashboard'
-                        : 'Instagram Real Reach & Analytics Dashboard'}
+                        : isIG
+                        ? 'Instagram Real Reach & Analytics Dashboard'
+                        : 'Flipkart Verified Reviews & Sentiment Dashboard'}
                     </h1>
                     <p className="text-xs text-slate-400 mt-0.5">
                       {isYT
                         ? 'Dedicated YouTube subscribers, real video/Shorts views, unique reach, and AI comment sentiment.'
-                        : 'Dedicated Instagram followers, accounts reached, Reel plays, and AI comment sentiment.'}
+                        : isIG
+                        ? 'Dedicated Instagram followers, accounts reached, Reel plays, and AI comment sentiment.'
+                        : 'Dedicated Flipkart verified buyer reviews, 1-5 star ratings, product issues, and AI sentiment.'}
                     </p>
                   </div>
                 </div>
@@ -471,11 +484,13 @@ export default function App() {
                     className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold text-white shadow-md transition ${
                       isYT
                         ? 'bg-gradient-to-r from-red-500 to-rose-600 shadow-red-500/20 hover:opacity-95'
-                        : 'bg-gradient-to-r from-[#F469A9] to-[#F47A38] shadow-pink-500/20 hover:opacity-95'
+                        : isIG
+                        ? 'bg-gradient-to-r from-[#F469A9] to-[#F47A38] shadow-pink-500/20 hover:opacity-95'
+                        : 'bg-gradient-to-r from-[#2874F0] to-[#1258ca] shadow-blue-500/20 hover:opacity-95'
                     }`}
                   >
                     <MessageSquareHeart className="w-3.5 h-3.5" />
-                    {isYT ? 'YouTube' : 'Instagram'} Comments Analysis (
+                    {isYT ? 'YouTube' : isIG ? 'Instagram' : 'Flipkart'} {isFK ? 'Reviews' : 'Comments'} Analysis (
                     {(activeViewStats?.total_comments_analyzed ?? 0).toLocaleString()}) →
                   </button>
                 </div>
@@ -554,10 +569,10 @@ export default function App() {
                         darkMode ? 'text-white' : 'text-slate-900'
                       }`}
                     >
-                      {isYT ? 'YouTube' : 'Instagram'} AI Comments Sentiment Analysis
+                      {isYT ? 'YouTube' : isIG ? 'Instagram' : 'Flipkart'} AI {isFK ? 'Reviews' : 'Comments'} Sentiment Analysis
                     </h1>
                     <p className="text-xs text-slate-400 mt-0.5">
-                      Deep NLP analysis of {(activeViewStats?.total_comments_analyzed ?? 0).toLocaleString()} {isYT ? 'YouTube' : 'Instagram'} comments (Full Pagination • Emoji Demojization • Sarcasm & Hinglish AI)
+                      Deep NLP analysis of {(activeViewStats?.total_comments_analyzed ?? 0).toLocaleString()} {isYT ? 'YouTube' : isIG ? 'Instagram' : 'Flipkart'} {isFK ? 'verified reviews' : 'comments'} (Full Pagination • Star Ratings • Delivery/Quality Issues • Hinglish AI)
                     </p>
                   </div>
                 </div>
@@ -568,11 +583,13 @@ export default function App() {
                     className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold text-white shadow-md transition ${
                       isYT
                         ? 'bg-gradient-to-r from-red-500 to-rose-600 shadow-red-500/20 hover:opacity-95'
-                        : 'bg-gradient-to-r from-[#F469A9] to-[#F47A38] shadow-pink-500/20 hover:opacity-95'
+                        : isIG
+                        ? 'bg-gradient-to-r from-[#F469A9] to-[#F47A38] shadow-pink-500/20 hover:opacity-95'
+                        : 'bg-gradient-to-r from-[#2874F0] to-[#1258ca] shadow-blue-500/20 hover:opacity-95'
                     }`}
                   >
                     <Share2 className="w-3.5 h-3.5" />
-                    + Analyze New {isYT ? 'YouTube' : 'Instagram'} URL
+                    + Analyze New {isYT ? 'YouTube' : isIG ? 'Instagram' : 'Flipkart'} URL
                   </button>
                 </div>
               </div>

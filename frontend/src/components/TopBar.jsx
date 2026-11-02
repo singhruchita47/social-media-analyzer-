@@ -4,6 +4,7 @@ import {
   Moon,
   Youtube,
   Instagram,
+  ShoppingBag,
   Download,
   Share2,
   PanelLeftClose,
@@ -42,7 +43,9 @@ export default function TopBar({
               !sidebarOpen
                 ? selectedPlatform === 'youtube'
                   ? 'bg-red-500 text-white border-red-500 shadow-sm hover:bg-red-600'
-                  : 'bg-gradient-to-r from-[#F469A9] to-[#F47A38] text-white border-pink-500 shadow-sm'
+                  : selectedPlatform === 'instagram'
+                  ? 'bg-gradient-to-r from-[#F469A9] to-[#F47A38] text-white border-pink-500 shadow-sm'
+                  : 'bg-[#2874F0] text-white border-blue-500 shadow-sm'
                 : darkMode
                 ? 'bg-slate-950 border-slate-800 text-slate-300 hover:bg-slate-800'
                 : 'bg-[#F6F7FB] border-slate-200/80 text-slate-700 hover:bg-slate-200/70'
@@ -52,7 +55,11 @@ export default function TopBar({
               <>
                 <PanelLeftClose
                   className={`w-4 h-4 ${
-                    selectedPlatform === 'youtube' ? 'text-red-500' : 'text-pink-500'
+                    selectedPlatform === 'youtube'
+                      ? 'text-red-500'
+                      : selectedPlatform === 'instagram'
+                      ? 'text-pink-500'
+                      : 'text-blue-500'
                   }`}
                 />
                 <span className="hidden sm:inline">Hide Sidebar</span>
@@ -67,7 +74,7 @@ export default function TopBar({
         )}
       </div>
 
-      {/* Right Controls: Strictly Separate YouTube vs Instagram Switcher */}
+      {/* Right Controls: YouTube vs Instagram vs Flipkart Switcher */}
       <div className="flex items-center gap-3">
         <div
           className={`flex items-center p-1 rounded-full border ${
@@ -78,35 +85,50 @@ export default function TopBar({
         >
           <button
             onClick={() => setSelectedPlatform('youtube')}
-            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition ${
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition ${
               selectedPlatform === 'youtube'
                 ? 'bg-gradient-to-r from-red-500 to-rose-600 text-white shadow-sm'
                 : 'text-slate-500 hover:text-slate-800'
             }`}
           >
             <Youtube className="w-3.5 h-3.5" />
-            YouTube Analytics
+            <span className="hidden md:inline">YouTube Analytics</span>
+            <span className="md:hidden">YouTube</span>
           </button>
           <button
             onClick={() => setSelectedPlatform('instagram')}
-            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition ${
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition ${
               selectedPlatform === 'instagram'
                 ? 'bg-gradient-to-r from-[#F469A9] to-[#F47A38] text-white shadow-sm'
                 : 'text-slate-500 hover:text-slate-800'
             }`}
           >
             <Instagram className="w-3.5 h-3.5" />
-            Instagram Analytics
+            <span className="hidden md:inline">Instagram Analytics</span>
+            <span className="md:hidden">Instagram</span>
+          </button>
+          <button
+            onClick={() => setSelectedPlatform('flipkart')}
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition ${
+              selectedPlatform === 'flipkart'
+                ? 'bg-[#2874F0] text-white shadow-sm'
+                : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <ShoppingBag className="w-3.5 h-3.5 text-amber-300" />
+            <span className="hidden md:inline">Flipkart Reviews</span>
+            <span className="md:hidden">Flipkart</span>
           </button>
         </div>
 
         <button
           onClick={onExportPDF}
-          title="Download Professional PDF Report with Charts & Creator Info"
+          title="Download Professional PDF Report with Charts & Product/Creator Info"
           className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-sm hover:from-orange-600 hover:to-amber-600 transition"
         >
           <FileText className="w-3.5 h-3.5" />
-          <span>Export PDF Report</span>
+          <span className="hidden sm:inline">Export PDF Report</span>
+          <span className="sm:hidden">PDF</span>
         </button>
 
         <button
@@ -127,12 +149,14 @@ export default function TopBar({
           className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold text-white shadow-md transition transform active:scale-95 ${
             selectedPlatform === 'youtube'
               ? 'bg-gradient-to-r from-red-500 to-rose-600 shadow-red-500/20'
-              : 'bg-gradient-to-r from-[#F469A9] to-[#F47A38] shadow-pink-500/20'
+              : selectedPlatform === 'instagram'
+              ? 'bg-gradient-to-r from-[#F469A9] to-[#F47A38] shadow-pink-500/20'
+              : 'bg-gradient-to-r from-[#2874F0] to-[#1258ca] shadow-blue-500/20'
           }`}
         >
           <Share2 className="w-3.5 h-3.5" />
           <span>
-            + Analyze {selectedPlatform === 'youtube' ? 'YouTube' : 'Instagram'}
+            + Analyze {selectedPlatform === 'youtube' ? 'YouTube' : selectedPlatform === 'instagram' ? 'Instagram' : 'Flipkart'}
           </span>
         </button>
 

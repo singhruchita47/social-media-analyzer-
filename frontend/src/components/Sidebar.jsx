@@ -10,15 +10,16 @@ import {
   Radio,
   Youtube,
   Instagram,
+  ShoppingBag,
   PanelLeftClose,
 } from 'lucide-react';
 
 const MAIN_MENU = [
-  { id: 'dashboard', label: 'Reach & Dashboard', icon: BarChart3 },
-  { id: 'insights', label: 'Comments Analysis', icon: MessageSquareHeart, badge: 'AI' },
-  { id: 'platforms', label: 'Post Reach Breakdown', icon: LayoutGrid },
-  { id: 'sentiment', label: 'Sentiment Overview', icon: Sparkles },
-  { id: 'history', label: 'Analyzed History', icon: History },
+  { id: 'dashboard', label: 'Reach & Dashboard', fkLabel: 'Reviews & Rating', icon: BarChart3 },
+  { id: 'insights', label: 'Comments Analysis', fkLabel: 'Review Analysis', icon: MessageSquareHeart, badge: 'AI' },
+  { id: 'platforms', label: 'Post Reach Breakdown', fkLabel: 'Product Comparison', icon: LayoutGrid },
+  { id: 'sentiment', label: 'Sentiment Overview', fkLabel: 'Customer Sentiment', icon: Sparkles },
+  { id: 'history', label: 'Analyzed History', fkLabel: 'Analyzed Products', icon: History },
 ];
 
 export default function Sidebar({
@@ -36,6 +37,10 @@ export default function Sidebar({
 }) {
   if (!isOpen) return null;
 
+  const isYT = selectedPlatform === 'youtube';
+  const isIG = selectedPlatform === 'instagram';
+  const isFK = selectedPlatform === 'flipkart';
+
   return (
     <aside
       className={`w-64 shrink-0 border-r flex flex-col justify-between transition-all duration-200 select-none ${
@@ -50,15 +55,19 @@ export default function Sidebar({
           <div className="flex items-center gap-2.5">
             <div
               className={`w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-md ${
-                selectedPlatform === 'youtube'
+                isYT
                   ? 'bg-gradient-to-tr from-red-500 to-rose-600 shadow-red-500/20'
-                  : 'bg-gradient-to-tr from-[#F47A38] via-[#F469A9] to-[#8B80F9] shadow-pink-500/20'
+                  : isIG
+                  ? 'bg-gradient-to-tr from-[#F47A38] via-[#F469A9] to-[#8B80F9] shadow-pink-500/20'
+                  : 'bg-gradient-to-tr from-[#2874F0] to-[#1258ca] shadow-blue-500/20'
               }`}
             >
-              {selectedPlatform === 'youtube' ? (
+              {isYT ? (
                 <Youtube className="w-5 h-5" />
-              ) : (
+              ) : isIG ? (
                 <Instagram className="w-5 h-5" />
+              ) : (
+                <ShoppingBag className="w-5 h-5 text-amber-300" />
               )}
             </div>
             <div>
@@ -71,12 +80,14 @@ export default function Sidebar({
               </span>
               <span
                 className={`ml-1.5 text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-md ${
-                  selectedPlatform === 'youtube'
+                  isYT
                     ? 'bg-red-500/15 text-red-600'
-                    : 'bg-pink-500/15 text-pink-600'
+                    : isIG
+                    ? 'bg-pink-500/15 text-pink-600'
+                    : 'bg-blue-500/15 text-[#2874F0]'
                 }`}
               >
-                {selectedPlatform === 'youtube' ? 'YT' : 'IG'}
+                {isYT ? 'YT' : isIG ? 'IG' : 'FK'}
               </span>
             </div>
           </div>
@@ -97,12 +108,12 @@ export default function Sidebar({
         </div>
 
         {/* Dedicated Separate Platform Switcher inside Sidebar */}
-        <div className="px-4 mb-3">
+        <div className="px-3 mb-3">
           <p className="px-2 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
             Select Platform Workspace
           </p>
           <div
-            className={`grid grid-cols-2 p-1 rounded-2xl border ${
+            className={`grid grid-cols-3 p-1 rounded-2xl border ${
               darkMode
                 ? 'bg-slate-950 border-slate-800'
                 : 'bg-[#F6F7FB] border-slate-200/80'
@@ -110,25 +121,36 @@ export default function Sidebar({
           >
             <button
               onClick={() => setSelectedPlatform('youtube')}
-              className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold transition ${
-                selectedPlatform === 'youtube'
+              className={`flex items-center justify-center gap-1 py-1.5 rounded-xl text-[11px] font-bold transition ${
+                isYT
                   ? 'bg-gradient-to-r from-red-500 to-rose-600 text-white shadow-sm'
                   : 'text-slate-500 hover:text-slate-800'
               }`}
             >
-              <Youtube className="w-3.5 h-3.5" />
-              YouTube
+              <Youtube className="w-3 h-3" />
+              YT
             </button>
             <button
               onClick={() => setSelectedPlatform('instagram')}
-              className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold transition ${
-                selectedPlatform === 'instagram'
+              className={`flex items-center justify-center gap-1 py-1.5 rounded-xl text-[11px] font-bold transition ${
+                isIG
                   ? 'bg-gradient-to-r from-[#F469A9] to-[#F47A38] text-white shadow-sm'
                   : 'text-slate-500 hover:text-slate-800'
               }`}
             >
-              <Instagram className="w-3.5 h-3.5" />
-              Instagram
+              <Instagram className="w-3 h-3" />
+              IG
+            </button>
+            <button
+              onClick={() => setSelectedPlatform('flipkart')}
+              className={`flex items-center justify-center gap-1 py-1.5 rounded-xl text-[11px] font-bold transition ${
+                isFK
+                  ? 'bg-[#2874F0] text-white shadow-sm'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <ShoppingBag className="w-3 h-3 text-amber-300" />
+              FK
             </button>
           </div>
         </div>
@@ -136,12 +158,12 @@ export default function Sidebar({
         {/* MAIN MENU */}
         <div className="px-4 mt-2 space-y-1">
           <p className="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-            {selectedPlatform === 'youtube' ? 'YouTube Menu' : 'Instagram Menu'}
+            {isYT ? 'YouTube Menu' : isIG ? 'Instagram Menu' : 'Flipkart Menu'}
           </p>
           {MAIN_MENU.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
-            const isYT = selectedPlatform === 'youtube';
+            const label = isFK ? (item.fkLabel || item.label) : item.label;
             return (
               <button
                 key={item.id}
@@ -151,10 +173,14 @@ export default function Sidebar({
                     ? darkMode
                       ? isYT
                         ? 'bg-red-500/15 text-red-300 font-semibold'
-                        : 'bg-pink-500/15 text-pink-300 font-semibold'
+                        : isIG
+                        ? 'bg-pink-500/15 text-pink-300 font-semibold'
+                        : 'bg-blue-500/15 text-blue-300 font-semibold'
                       : isYT
                       ? 'bg-gradient-to-r from-red-50 via-rose-50/70 to-pink-50/40 text-slate-900 font-semibold shadow-sm'
-                      : 'bg-gradient-to-r from-orange-50 via-pink-50/70 to-purple-50/50 text-slate-900 font-semibold shadow-sm'
+                      : isIG
+                      ? 'bg-gradient-to-r from-orange-50 via-pink-50/70 to-purple-50/50 text-slate-900 font-semibold shadow-sm'
+                      : 'bg-gradient-to-r from-blue-50 via-sky-50 to-indigo-50/40 text-slate-900 font-semibold shadow-sm'
                     : darkMode
                     ? 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60'
                     : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
@@ -163,7 +189,7 @@ export default function Sidebar({
                 {isActive && (
                   <span
                     className={`w-1 h-6 rounded-r-full absolute left-0 top-1/2 -translate-y-1/2 ${
-                      isYT ? 'bg-red-500' : 'bg-pink-500'
+                      isYT ? 'bg-red-500' : isIG ? 'bg-pink-500' : 'bg-[#2874F0]'
                     }`}
                   />
                 )}
@@ -173,18 +199,22 @@ export default function Sidebar({
                       isActive
                         ? isYT
                           ? 'text-red-500'
-                          : 'text-pink-500'
+                          : isIG
+                          ? 'text-pink-500'
+                          : 'text-[#2874F0]'
                         : 'text-slate-400'
                     }`}
                   />
-                  {item.label}
+                  {label}
                 </span>
                 {item.badge && (
                   <span
                     className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                       isYT
                         ? 'bg-red-500/15 text-red-600'
-                        : 'bg-pink-500/15 text-pink-600'
+                        : isIG
+                        ? 'bg-pink-500/15 text-pink-600'
+                        : 'bg-blue-500/15 text-[#2874F0]'
                     }`}
                   >
                     {item.badge}
@@ -253,28 +283,40 @@ export default function Sidebar({
               : 'bg-gradient-to-br from-orange-50/90 via-pink-50/70 to-purple-50/90 border-orange-100/80'
           }`}
         >
-          <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-pink-500 to-orange-400 text-white flex items-center justify-center mx-auto mb-2.5 shadow-md shadow-pink-500/20">
-            <Trophy className="w-5 h-5" />
+          <div className={`w-10 h-10 rounded-full text-white flex items-center justify-center mx-auto mb-2.5 shadow-md ${
+            isYT
+              ? 'bg-gradient-to-tr from-red-500 to-rose-600 shadow-red-500/20'
+              : isIG
+              ? 'bg-gradient-to-tr from-pink-500 to-orange-400 shadow-pink-500/20'
+              : 'bg-gradient-to-tr from-[#2874F0] to-[#1258ca] shadow-blue-500/20'
+          }`}>
+            {isFK ? <ShoppingBag className="w-5 h-5 text-amber-300" /> : <Trophy className="w-5 h-5" />}
           </div>
           <h4
             className={`text-xs font-bold ${
               darkMode ? 'text-white' : 'text-slate-900'
             }`}
           >
-            Analyze {selectedPlatform === 'youtube' ? 'YouTube Short/Video' : 'Instagram Post'}!
+            {isYT ? 'Analyze YouTube Video/Short' : isIG ? 'Analyze Instagram Post/Reel' : 'Analyze Flipkart Product!'}
           </h4>
           <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
-            Fetch real {selectedPlatform === 'youtube' ? 'YouTube views, subscribers' : 'Instagram reach'} & AI comment sentiment
+            {isYT
+              ? 'Fetch real YouTube views, subscribers & AI sentiment'
+              : isIG
+              ? 'Fetch real Instagram reach & AI comment sentiment'
+              : 'Fetch Flipkart verified customer reviews & star ratings'}
           </p>
           <button
             onClick={onOpenAnalyzeModal}
             className={`mt-3 w-full py-2 px-3 rounded-full text-xs font-semibold text-white shadow-md transition transform active:scale-95 ${
-              selectedPlatform === 'youtube'
+              isYT
                 ? 'bg-gradient-to-r from-red-500 to-rose-600 shadow-red-500/25'
-                : 'bg-gradient-to-r from-[#F469A9] to-[#F47A38] shadow-pink-500/25'
+                : isIG
+                ? 'bg-gradient-to-r from-[#F469A9] to-[#F47A38] shadow-pink-500/25'
+                : 'bg-gradient-to-r from-[#2874F0] to-[#1258ca] shadow-blue-500/25'
             }`}
           >
-            + Analyze {selectedPlatform === 'youtube' ? 'YouTube' : 'Instagram'}
+            + Analyze {isYT ? 'YouTube' : isIG ? 'Instagram' : 'Flipkart'}
           </button>
         </div>
       </div>

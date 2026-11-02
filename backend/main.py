@@ -412,7 +412,7 @@ def get_aggregated_stats(
     all_records = db.get_all_analyses(platform=None, limit=200)
     filtered_records = (
         [r for r in all_records if r.platform == platform]
-        if platform in ("youtube", "instagram")
+        if platform in ("youtube", "instagram", "flipkart")
         else all_records
     )
 
@@ -444,7 +444,7 @@ def get_aggregated_stats(
             impressions_growth_pct=0.0,
         )
         empty_comp: Dict[str, PlatformComparisonMetric] = {}
-        for plat in ("youtube", "instagram"):
+        for plat in ("youtube", "instagram", "flipkart"):
             empty_comp[plat] = PlatformComparisonMetric(
                 platform=plat,
                 total_posts=0,
@@ -573,9 +573,9 @@ def get_aggregated_stats(
         ),
     }
 
-    # Platform comparison (always compares YouTube vs Instagram across all records)
+    # Platform comparison (YouTube vs Instagram vs Flipkart across all records)
     platform_comp: Dict[str, PlatformComparisonMetric] = {}
-    for plat in ("youtube", "instagram"):
+    for plat in ("youtube", "instagram", "flipkart"):
         p_recs = [r for r in all_records if r.platform == plat]
         p_comments = sum(r.total_comments for r in p_recs)
         p_likes = sum(r.engagement_likes for r in p_recs)
@@ -612,11 +612,11 @@ def get_aggregated_stats(
             total_posts=len(p_recs),
             total_comments=p_comments,
             total_likes=p_likes,
-            followers=78540 if plat == "youtube" else 54000,
-            reach=1410000 if plat == "youtube" else 430000,
-            impressions=2180000 if plat == "youtube" else 1030000,
-            engagement_rate=6.8 if plat == "youtube" else 8.4,
-            growth_pct=11.2 if plat == "youtube" else 9.4,
+            followers=78540 if plat == "youtube" else (54000 if plat == "instagram" else 42000),
+            reach=1410000 if plat == "youtube" else (430000 if plat == "instagram" else 890000),
+            impressions=2180000 if plat == "youtube" else (1030000 if plat == "instagram" else 1560000),
+            engagement_rate=6.8 if plat == "youtube" else (8.4 if plat == "instagram" else 7.2),
+            growth_pct=11.2 if plat == "youtube" else (9.4 if plat == "instagram" else 14.5),
             positive_pct=float(np.round((p_pos / p_denom) * 100.0, 1)),
             negative_pct=float(np.round((p_neg / p_denom) * 100.0, 1)),
             neutral_pct=float(np.round((p_neu / p_denom) * 100.0, 1)),
