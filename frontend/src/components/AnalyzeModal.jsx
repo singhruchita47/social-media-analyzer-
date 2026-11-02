@@ -18,6 +18,7 @@ export default function AnalyzeModal({
 }) {
   const [platform, setPlatform] = useState(defaultPlatform);
   const [postUrl, setPostUrl] = useState('');
+  const [maxComments, setMaxComments] = useState(10000);
   const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
@@ -51,7 +52,7 @@ export default function AnalyzeModal({
       await onSubmitAnalysis({
         platform,
         post_url: postUrl.trim(),
-        max_comments: 500,
+        max_comments: Number(maxComments) || 10000,
       });
       setPostUrl('');
     } catch (err) {
@@ -151,6 +152,49 @@ export default function AnalyzeModal({
                   : 'bg-[#F6F7FB] border-slate-200 text-slate-900 focus:bg-white focus:border-orange-500'
               }`}
             />
+          </div>
+
+          {/* Comment Volume / Limit Selector */}
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-bold text-slate-500">
+                Comments Fetch Limit
+              </label>
+              <span className="text-xs font-extrabold text-orange-500">
+                {maxComments >= 10000
+                  ? '🔥 10,000 (Pure / All Comments)'
+                  : `${maxComments.toLocaleString()} Comments`}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-4 gap-2 mb-2">
+              {[
+                { label: '500', val: 500, desc: 'Fast' },
+                { label: '2,000', val: 2000, desc: 'Deep' },
+                { label: '5,000', val: 5000, desc: 'Heavy' },
+                { label: '10,000', val: 10000, desc: 'Mega All' },
+              ].map((btn) => (
+                <button
+                  key={btn.val}
+                  type="button"
+                  onClick={() => setMaxComments(btn.val)}
+                  className={`py-2 px-1 rounded-xl border text-center transition ${
+                    maxComments === btn.val
+                      ? 'bg-orange-500 text-white border-orange-500 font-extrabold shadow-sm'
+                      : darkMode
+                      ? 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+                      : 'bg-[#F6F7FB] border-slate-200 text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  <div className="text-xs font-bold">{btn.label}</div>
+                  <div className="text-[10px] opacity-75">{btn.desc}</div>
+                </button>
+              ))}
+            </div>
+
+            <p className="text-[11px] text-slate-400">
+              API multi-page token pagination will fetch up to {maxComments.toLocaleString()} comments (100% of all comments if video has fewer).
+            </p>
           </div>
 
           {errorMsg && (

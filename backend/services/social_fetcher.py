@@ -274,10 +274,11 @@ class SocialCommentFetcher:
                 except Exception:
                     pass
 
-            # Full Comment Pagination (100+ comments) using while-loop and nextPageToken
+            # Full Comment Pagination (up to 10,000+ comments) using while-loop and nextPageToken
             raw_comments: List[Dict[str, Any]] = []
             next_page_token: Optional[str] = None
             target_limit = max(100, max_comments)
+            seen_tokens = set()
 
             while len(raw_comments) < target_limit:
                 page_size = min(100, target_limit - len(raw_comments))
@@ -290,12 +291,15 @@ class SocialCommentFetcher:
                     "key": self.youtube_api_key,
                 }
                 if next_page_token:
+                    if next_page_token in seen_tokens:
+                        break
+                    seen_tokens.add(next_page_token)
                     params["pageToken"] = next_page_token
 
                 comments_resp = requests.get(
                     "https://www.googleapis.com/youtube/v3/commentThreads",
                     params=params,
-                    timeout=12,
+                    timeout=15,
                 )
                 if comments_resp.status_code != 200:
                     break
@@ -323,6 +327,8 @@ class SocialCommentFetcher:
                             ),
                         }
                     )
+                    if len(raw_comments) >= target_limit:
+                        break
 
                 next_page_token = data.get("nextPageToken")
                 if not next_page_token:
@@ -497,7 +503,8 @@ class SocialCommentFetcher:
         pagination_token: Optional[str] = None
         target_ig_limit = max(100, max_comments)
 
-        for _ in range(5):  # Paginate up to 5 batches if post has many comments
+        max_batches = min(200, (target_ig_limit // 40) + 2)
+        for _ in range(max_batches):  # Paginate up to 200 batches for up to 10,000+ comments
             try:
                 params: Dict[str, Any] = {"media_code": media_code, "sort_order": "popular"}
                 if pagination_token:

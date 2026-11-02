@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   AlertTriangle,
   ShieldAlert,
@@ -15,6 +15,10 @@ import {
   LayoutGrid,
   MessageSquare,
   FileText,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
 } from 'lucide-react';
 
 const STATUS_CONFIG = {
@@ -346,6 +350,12 @@ export default function LiveInsightsPanel({
   const [problemFilter, setProblemFilter] = useState('all'); // 'all' | 'any_problem' | 'price' | 'delivery' | 'quality' | 'packaging' | 'support'
   const [sortBy, setSortBy] = useState('problems_first'); // 'problems_first' | 'likes' | 'confidence' | 'positive'
   const [layoutMode, setLayoutMode] = useState('table'); // 'table' | 'cards'
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [sentimentFilter, problemFilter, searchQuery, sortBy]);
 
   const allComments = stats?.recent_comments || [];
 
@@ -439,6 +449,13 @@ export default function LiveInsightsPanel({
       return 0;
     });
   }, [enrichedComments, sentimentFilter, problemFilter, searchQuery, sortBy]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredComments.length / pageSize));
+  const safeCurrentPage = Math.min(Math.max(1, currentPage), totalPages);
+  const paginatedComments = useMemo(() => {
+    const start = (safeCurrentPage - 1) * pageSize;
+    return filteredComments.slice(start, start + pageSize);
+  }, [filteredComments, safeCurrentPage, pageSize]);
 
   return (
     <div className="space-y-6">
@@ -845,7 +862,7 @@ export default function LiveInsightsPanel({
         ) : layoutMode === 'cards' ? (
           /* Cards Grid View */
           <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[680px] overflow-y-auto bg-[#F8F9FC]/60 dark:bg-slate-950/40">
-            {filteredComments.map((c, index) => {
+            {paginatedComments.map((c, index) => {
               const cfg =
                 STATUS_CONFIG[c.effectiveSentiment] || STATUS_CONFIG.Neutral;
               const rc = c.rootCause;
@@ -955,7 +972,7 @@ export default function LiveInsightsPanel({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70 text-xs">
-                {filteredComments.map((c, index) => {
+                {paginatedComments.map((c, index) => {
                   const cfg =
                     STATUS_CONFIG[c.effectiveSentiment] || STATUS_CONFIG.Neutral;
                   const rc = c.rootCause;
@@ -963,6 +980,7 @@ export default function LiveInsightsPanel({
                     AVATAR_GRADIENTS[index % AVATAR_GRADIENTS.length];
                   const confPct = Math.round((c.confidence || 0.9) * 100);
                   const isProblemRow = rc.problemKey !== 'none';
+                  const globalIdx = (safeCurrentPage - 1) * pageSize + index + 1;
 
                   return (
                     <tr
@@ -986,7 +1004,7 @@ export default function LiveInsightsPanel({
                               : 'bg-slate-100 text-slate-600'
                           }`}
                         >
-                          {String(index + 1).padStart(2, '0')}
+                          {globalIdx}
                         </span>
                       </td>
 
@@ -1109,6 +1127,102 @@ export default function LiveInsightsPanel({
                 })}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* High-Volume Pagination Controls Bar (Smoothly handles up to 10,000+ comments) */}
+        {filteredComments.length > 0 && (
+          <div
+            className={`px-6 py-4 border-t flex flex-col sm:flex-row items-center justify-between gap-4 ${
+              darkMode
+                ? 'bg-slate-900 border-slate-800'
+                : 'bg-slate-50/80 border-slate-100'
+            }`}
+          >
+            <div className="text-xs font-semibold text-slate-500">
+              Showing{' '}
+              <strong className={darkMode ? 'text-white' : 'text-slate-900'}>
+                {((safeCurrentPage - 1) * pageSize + 1).toLocaleString()}
+              </strong>{' '}
+              to{' '}
+              <strong className={darkMode ? 'text-white' : 'text-slate-900'}>
+                {Math.min(
+                  safeCurrentPage * pageSize,
+                  filteredComments.length
+                ).toLocaleString()}
+              </strong>{' '}
+              of{' '}
+              <strong className="text-orange-500">
+                {filteredComments.length.toLocaleString()}
+              </strong>{' '}
+              analyzed comments
+            </div>
+
+            <div className="flex items-center gap-3">
+              {/* Page size selector */}
+              <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                <span>Per page:</span>
+                <select
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold border outline-none cursor-pointer ${
+                    darkMode
+                      ? 'bg-slate-950 border-slate-800 text-slate-200'
+                      : 'bg-white border-slate-200 text-slate-800'
+                  }`}
+                >
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                  <option value={250}>250</option>
+                  <option value={500}>500</option>
+                </select>
+              </div>
+
+              {/* Page navigation buttons */}
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setCurrentPage(1)}
+                  disabled={safeCurrentPage <= 1}
+                  title="First Page"
+                  className="p-1.5 rounded-lg border text-xs font-bold transition disabled:opacity-25 disabled:cursor-not-allowed hover:bg-orange-500 hover:text-white"
+                >
+                  <ChevronsLeft className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={safeCurrentPage <= 1}
+                  title="Previous Page"
+                  className="p-1.5 rounded-lg border text-xs font-bold transition disabled:opacity-25 disabled:cursor-not-allowed hover:bg-orange-500 hover:text-white"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+
+                <span className="px-3 py-1 rounded-lg text-xs font-mono font-extrabold bg-orange-500/10 text-orange-600 border border-orange-500/20">
+                  {safeCurrentPage} / {totalPages}
+                </span>
+
+                <button
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={safeCurrentPage >= totalPages}
+                  title="Next Page"
+                  className="p-1.5 rounded-lg border text-xs font-bold transition disabled:opacity-25 disabled:cursor-not-allowed hover:bg-orange-500 hover:text-white"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={safeCurrentPage >= totalPages}
+                  title="Last Page"
+                  className="p-1.5 rounded-lg border text-xs font-bold transition disabled:opacity-25 disabled:cursor-not-allowed hover:bg-orange-500 hover:text-white"
+                >
+                  <ChevronsRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

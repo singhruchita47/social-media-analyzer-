@@ -24,7 +24,7 @@ class AnalyzeRequest(BaseModel):
         description="Optional list of raw comment strings to analyze alongside or instead of API fetch",
     )
     max_comments: int = Field(
-        default=500, ge=10, le=2000, description="Maximum number of comments to fetch via full pagination (100+ comments)"
+        default=2000, ge=10, le=25000, description="Maximum number of comments to fetch via full pagination (supports up to 25,000 comments)"
     )
 
 
