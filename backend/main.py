@@ -70,8 +70,13 @@ def _run_analysis_pipeline(
     sentiment_override: Optional[SentimentBreakdown] = None,
     force_sandbox: bool = False,
 ) -> AnalysisResult:
+    eff_platform = (
+        "instagram" if req.platform == "social_media"
+        else "flipkart" if req.platform == "ecommerce"
+        else req.platform
+    )
     metadata, raw_comments = fetcher.fetch_comments(
-        platform=req.platform,
+        platform=eff_platform,
         post_url=req.post_url,
         post_title=req.post_title,
         custom_comments=req.custom_comments,
@@ -79,7 +84,7 @@ def _run_analysis_pipeline(
         force_sandbox=force_sandbox,
     )
 
-    df_cleaned, cleaning_stats = pipeline.clean_comments(raw_comments, req.platform)
+    df_cleaned, cleaning_stats = pipeline.clean_comments(raw_comments, eff_platform)
 
     (
         classified_comments,
@@ -89,7 +94,7 @@ def _run_analysis_pipeline(
         actionable_insights,
         engine_label,
     ) = nlp_engine.analyze_dataframe(
-        df_cleaned, req.platform, metadata["post_title"], force_sandbox=force_sandbox
+        df_cleaned, eff_platform, metadata["post_title"], force_sandbox=force_sandbox
     )
 
     breakdown, metrics = pipeline.compute_statistics(classified_comments, cleaning_stats)
@@ -410,9 +415,14 @@ def get_aggregated_stats(
     and real reach metrics. Returns all zeros when no posts have been analyzed yet.
     """
     all_records = db.get_all_analyses(platform=None, limit=200)
+    plat_filter = (
+        "instagram" if platform == "social_media"
+        else "flipkart" if platform == "ecommerce"
+        else platform
+    )
     filtered_records = (
-        [r for r in all_records if r.platform == platform]
-        if platform in ("youtube", "instagram", "flipkart")
+        [r for r in all_records if r.platform in (plat_filter, platform)]
+        if platform in ("youtube", "instagram", "flipkart", "social_media", "ecommerce")
         else all_records
     )
 

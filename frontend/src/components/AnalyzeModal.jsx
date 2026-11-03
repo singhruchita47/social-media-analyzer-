@@ -7,6 +7,7 @@ import {
   Sparkles,
   Loader2,
   CheckCircle2,
+  Bot,
 } from 'lucide-react';
 
 export default function AnalyzeModal({
@@ -34,11 +35,22 @@ export default function AnalyzeModal({
   const handleUrlChange = (val) => {
     setPostUrl(val);
     const lower = val.toLowerCase();
-    if (lower.includes('instagram.com') || lower.includes('instagr.am')) {
+    if (
+      lower.includes('instagram.com') ||
+      lower.includes('instagr.am') ||
+      lower.includes('threads.net') ||
+      lower.includes('twitter.com') ||
+      lower.includes('x.com')
+    ) {
       setPlatform('instagram');
     } else if (lower.includes('youtube.com') || lower.includes('youtu.be')) {
       setPlatform('youtube');
-    } else if (lower.includes('flipkart.com') || lower.includes('dl.flipkart.com')) {
+    } else if (
+      lower.includes('flipkart.com') ||
+      lower.includes('dl.flipkart.com') ||
+      lower.includes('amazon.') ||
+      lower.includes('myntra.')
+    ) {
       setPlatform('flipkart');
     }
   };
@@ -46,7 +58,7 @@ export default function AnalyzeModal({
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!postUrl.trim()) {
-      setErrorMsg('Please paste a valid YouTube, Instagram, or Flipkart link.');
+      setErrorMsg('Please paste a valid YouTube, Social Media, or E-Commerce link.');
       return;
     }
     setErrorMsg('');
@@ -87,10 +99,10 @@ export default function AnalyzeModal({
           </div>
           <div>
             <h2 className="text-lg font-bold">
-              Analyze Social or E-Commerce Link
+              Analyze Media or E-Commerce Link
             </h2>
             <p className="text-xs text-slate-400">
-              Select YouTube, Instagram, or Flipkart to fetch & analyze reviews/comments
+              Paste YouTube, Social Media, or E-Commerce product links
             </p>
           </div>
         </div>
@@ -99,7 +111,7 @@ export default function AnalyzeModal({
           {/* Platform Selector */}
           <div>
             <label className="block text-xs font-bold text-slate-500 mb-1.5">
-              Choose Platform
+              Choose Platform Category
             </label>
             <div className="grid grid-cols-3 gap-2">
               <button
@@ -129,7 +141,7 @@ export default function AnalyzeModal({
                 }`}
               >
                 <Instagram className="w-4 h-4" />
-                Instagram
+                Social Media
               </button>
 
               <button
@@ -144,15 +156,25 @@ export default function AnalyzeModal({
                 }`}
               >
                 <ShoppingBag className="w-4 h-4" />
-                Flipkart
+                E-Commerce
               </button>
             </div>
+          </div>
+
+          {/* Automated Headless Scraper Status Banner */}
+          <div className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 text-slate-600 dark:text-slate-300 text-[11px]">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0 animate-pulse" />
+            <span>
+              {platform === 'youtube'
+                ? '⚡ Live YouTube Data API v3 token pagination enabled'
+                : '🤖 Automated Headless Scraper: Extracts comments directly without needing API keys!'}
+            </span>
           </div>
 
           {/* Post URL */}
           <div>
             <label className="block text-xs font-bold text-slate-500 mb-1.5">
-              Paste {platform === 'youtube' ? 'YouTube' : platform === 'instagram' ? 'Instagram' : 'Flipkart'} Link *
+              Paste {platform === 'youtube' ? 'YouTube' : platform === 'instagram' ? 'Social Media (Instagram/Reels)' : 'E-Commerce (Flipkart/Store)'} Link *
             </label>
             <input
               type="text"
@@ -162,14 +184,14 @@ export default function AnalyzeModal({
                 platform === 'youtube'
                   ? 'https://www.youtube.com/watch?v=... or /shorts/...'
                   : platform === 'instagram'
-                  ? 'https://www.instagram.com/p/... or /reel/...'
+                  ? 'https://www.instagram.com/p/... or /reel/... (No API Key Required)'
                   : 'https://www.flipkart.com/.../p/itm... or product link'
               }
               autoFocus
               className={`w-full px-4 py-3 rounded-xl text-sm border outline-none transition ${
                 darkMode
-                  ? 'bg-slate-950 border-slate-800 text-slate-100 focus:border-orange-500'
-                  : 'bg-[#F6F7FB] border-slate-200 text-slate-900 focus:bg-white focus:border-orange-500'
+                  ? 'bg-slate-950 border-slate-800 text-slate-100 focus:border-indigo-500'
+                  : 'bg-slate-50 border-slate-200 text-slate-900 focus:bg-white focus:border-indigo-500'
               }`}
             />
           </div>
@@ -180,7 +202,7 @@ export default function AnalyzeModal({
               <label className="text-xs font-bold text-slate-500">
                 {platform === 'flipkart' ? 'Reviews Fetch Limit' : 'Comments Fetch Limit'}
               </label>
-              <span className="text-xs font-extrabold text-orange-500">
+              <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">
                 {maxComments >= 10000
                   ? '🔥 10,000 (Pure / All Comments)'
                   : `${maxComments.toLocaleString()} Comments`}
@@ -200,10 +222,10 @@ export default function AnalyzeModal({
                   onClick={() => setMaxComments(btn.val)}
                   className={`py-2 px-1 rounded-xl border text-center transition ${
                     maxComments === btn.val
-                      ? 'bg-orange-500 text-white border-orange-500 font-extrabold shadow-sm'
+                      ? 'bg-slate-900 text-white border-slate-900 dark:bg-indigo-600 dark:border-indigo-600 font-bold shadow-sm'
                       : darkMode
                       ? 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
-                      : 'bg-[#F6F7FB] border-slate-200 text-slate-600 hover:bg-slate-100'
+                      : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
                   }`}
                 >
                   <div className="text-xs font-bold">{btn.label}</div>
@@ -214,8 +236,8 @@ export default function AnalyzeModal({
 
             <p className="text-[11px] text-slate-400">
               {platform === 'flipkart'
-                ? `Scraping & pagination will fetch verified Flipkart product reviews up to ${maxComments.toLocaleString()} reviews.`
-                : `API multi-page token pagination will fetch up to ${maxComments.toLocaleString()} comments (100% of all comments if video has fewer).`}
+                ? `Automated scraper & pagination will fetch verified customer reviews up to ${maxComments.toLocaleString()} reviews.`
+                : `Automated engine will fetch and analyze up to ${maxComments.toLocaleString()} comments (100% of all comments if fewer).`}
             </p>
           </div>
 
@@ -248,12 +270,12 @@ export default function AnalyzeModal({
               {isAnalyzing ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  {platform === 'flipkart' ? 'Analyzing Reviews...' : 'Analyzing Comments...'}
+                  {platform === 'flipkart' ? 'Scraping & Analyzing Reviews...' : 'Scraping & Analyzing Comments...'}
                 </>
               ) : (
                 <>
                   <CheckCircle2 className="w-4 h-4" />
-                  {platform === 'flipkart' ? 'Run Flipkart Review Analysis' : 'Run Reach & Comment Analysis'}
+                  {platform === 'flipkart' ? 'Run E-Commerce Review Analysis' : platform === 'instagram' ? 'Run Social Media Analysis' : 'Run YouTube Analysis'}
                 </>
               )}
             </button>

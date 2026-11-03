@@ -74,7 +74,7 @@ export default function TopBar({
         )}
       </div>
 
-      {/* Right Controls: YouTube vs Instagram vs Flipkart Switcher */}
+      {/* Right Controls: YouTube vs Social Media Platform vs E-Commerce Platform */}
       <div className="flex items-center gap-3">
         <div
           className={`flex items-center p-1 rounded-full border ${
@@ -92,8 +92,8 @@ export default function TopBar({
             }`}
           >
             <Youtube className="w-3.5 h-3.5" />
-            <span className="hidden md:inline">YouTube Analytics</span>
-            <span className="md:hidden">YouTube</span>
+            <span className="hidden lg:inline">YouTube</span>
+            <span className="lg:hidden">YT</span>
           </button>
           <button
             onClick={() => setSelectedPlatform('instagram')}
@@ -104,8 +104,8 @@ export default function TopBar({
             }`}
           >
             <Instagram className="w-3.5 h-3.5" />
-            <span className="hidden md:inline">Instagram Analytics</span>
-            <span className="md:hidden">Instagram</span>
+            <span className="hidden lg:inline">Social Media Platform</span>
+            <span className="lg:hidden">Social Media</span>
           </button>
           <button
             onClick={() => setSelectedPlatform('flipkart')}
@@ -116,8 +116,8 @@ export default function TopBar({
             }`}
           >
             <ShoppingBag className="w-3.5 h-3.5" />
-            <span className="hidden md:inline">Flipkart Reviews</span>
-            <span className="md:hidden">Flipkart</span>
+            <span className="hidden lg:inline">E-Commerce Platform</span>
+            <span className="lg:hidden">E-Commerce</span>
           </button>
         </div>
 
@@ -156,7 +156,7 @@ export default function TopBar({
         >
           <Share2 className="w-3.5 h-3.5" />
           <span>
-            + Analyze {isYT ? 'YouTube' : isIG ? 'Instagram' : 'Flipkart'}
+            + Analyze {isYT ? 'YouTube' : isIG ? 'Social Media' : 'E-Commerce'}
           </span>
         </button>
 

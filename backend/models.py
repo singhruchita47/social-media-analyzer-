@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Literal, Optional
 from pydantic import BaseModel, Field
 
-PlatformType = Literal["youtube", "instagram", "flipkart"]
+PlatformType = Literal["youtube", "instagram", "flipkart", "social_media", "ecommerce"]
 SentimentLabel = Literal["Positive", "Negative", "Neutral", "Mixed", "Question"]
 
 

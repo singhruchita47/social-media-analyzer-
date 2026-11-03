@@ -87,7 +87,7 @@ export default function Sidebar({
                     : 'bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400'
                 }`}
               >
-                {isYT ? 'YT' : isIG ? 'IG' : 'FK'}
+                {isYT ? 'YouTube' : isIG ? 'Social' : 'E-Comm'}
               </span>
             </div>
           </div>
@@ -128,7 +128,7 @@ export default function Sidebar({
               }`}
             >
               <Youtube className="w-3 h-3" />
-              YT
+              YouTube
             </button>
             <button
               onClick={() => setSelectedPlatform('instagram')}
@@ -139,7 +139,7 @@ export default function Sidebar({
               }`}
             >
               <Instagram className="w-3 h-3" />
-              IG
+              Social
             </button>
             <button
               onClick={() => setSelectedPlatform('flipkart')}
@@ -150,7 +150,7 @@ export default function Sidebar({
               }`}
             >
               <ShoppingBag className="w-3 h-3" />
-              FK
+              E-Comm
             </button>
           </div>
         </div>
@@ -158,7 +158,7 @@ export default function Sidebar({
         {/* MAIN MENU */}
         <div className="px-3 mt-2 space-y-1">
           <p className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-            {isYT ? 'YouTube Menu' : isIG ? 'Instagram Menu' : 'Flipkart Menu'}
+            {isYT ? 'YouTube Menu' : isIG ? 'Social Media Menu' : 'E-Commerce Menu'}
           </p>
           {MAIN_MENU.map((item) => {
             const Icon = item.icon;
@@ -289,14 +289,14 @@ export default function Sidebar({
               darkMode ? 'text-white' : 'text-slate-900'
             }`}
           >
-            {isYT ? 'Analyze YouTube Video' : isIG ? 'Analyze Instagram Post' : 'Analyze Flipkart Product'}
+            {isYT ? 'Analyze YouTube Video' : isIG ? 'Analyze Social Media Post' : 'Analyze E-Commerce Product'}
           </h4>
           <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
             {isYT
               ? 'Fetch real YouTube views & AI sentiment'
               : isIG
-              ? 'Fetch real Instagram reach & comments'
-              : 'Fetch Flipkart verified customer reviews'}
+              ? 'Automated headless scraping (No API Key)'
+              : 'Automated review & ratings scraping'}
           </p>
           <button
             onClick={onOpenAnalyzeModal}
@@ -308,7 +308,7 @@ export default function Sidebar({
                 : 'bg-blue-600 hover:bg-blue-700'
             }`}
           >
-            + Analyze {isYT ? 'YouTube' : isIG ? 'Instagram' : 'Flipkart'}
+            + Analyze {isYT ? 'YouTube' : isIG ? 'Social Media' : 'E-Commerce'}
           </button>
         </div>
       </div>

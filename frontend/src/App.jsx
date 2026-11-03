@@ -463,17 +463,17 @@ export default function App() {
                       }`}
                     >
                       {isYT
-                        ? 'YouTube Real Reach & Analytics Dashboard'
+                        ? 'YouTube Video & Shorts Reach Dashboard'
                         : isIG
-                        ? 'Instagram Real Reach & Analytics Dashboard'
-                        : 'Flipkart Verified Reviews & Sentiment Dashboard'}
+                        ? 'Social Media Platform (Instagram/Reels) Reach Dashboard'
+                        : 'E-Commerce Platform (Flipkart/Reviews) Sentiment Dashboard'}
                     </h1>
                     <p className="text-xs text-slate-400 mt-0.5">
                       {isYT
                         ? 'Dedicated YouTube subscribers, real video/Shorts views, unique reach, and AI comment sentiment.'
                         : isIG
-                        ? 'Dedicated Instagram followers, accounts reached, Reel plays, and AI comment sentiment.'
-                        : 'Dedicated Flipkart verified buyer reviews, 1-5 star ratings, product issues, and AI sentiment.'}
+                        ? 'Automated headless scraping of social media reach, Reel plays, and AI comment sentiment (No API Key Required).'
+                        : 'Automated scraping of verified customer reviews, 1-5★ star ratings, product issues, and AI sentiment.'}
                     </p>
                   </div>
                 </div>
@@ -490,7 +490,7 @@ export default function App() {
                     }`}
                   >
                     <MessageSquareHeart className="w-3.5 h-3.5" />
-                    {isYT ? 'YouTube' : isIG ? 'Instagram' : 'Flipkart'} {isFK ? 'Reviews' : 'Comments'} Analysis (
+                    {isYT ? 'YouTube' : isIG ? 'Social Media' : 'E-Commerce'} {isFK ? 'Reviews' : 'Comments'} Analysis (
                     {(activeViewStats?.total_comments_analyzed ?? 0).toLocaleString()}) →
                   </button>
                 </div>
@@ -569,10 +569,10 @@ export default function App() {
                         darkMode ? 'text-white' : 'text-slate-900'
                       }`}
                     >
-                      {isYT ? 'YouTube' : isIG ? 'Instagram' : 'Flipkart'} AI {isFK ? 'Reviews' : 'Comments'} Sentiment Analysis
+                      {isYT ? 'YouTube' : isIG ? 'Social Media Platform' : 'E-Commerce Platform'} AI {isFK ? 'Reviews' : 'Comments'} Sentiment Analysis
                     </h1>
                     <p className="text-xs text-slate-400 mt-0.5">
-                      Deep NLP analysis of {(activeViewStats?.total_comments_analyzed ?? 0).toLocaleString()} {isYT ? 'YouTube' : isIG ? 'Instagram' : 'Flipkart'} {isFK ? 'verified reviews' : 'comments'} (Full Pagination • Star Ratings • Delivery/Quality Issues • Hinglish AI)
+                      Deep NLP analysis of {(activeViewStats?.total_comments_analyzed ?? 0).toLocaleString()} {isYT ? 'YouTube' : isIG ? 'social media' : 'e-commerce'} {isFK ? 'verified reviews' : 'comments'} (Automated Headless Scraping • Star Ratings • Delivery/Quality Issues • AI Sentiment)
                     </p>
                   </div>
                 </div>

@@ -23,10 +23,10 @@ def extract_post_id(platform: str, post_url: str) -> str:
             return cleaned
         return "yt_" + hashlib.md5(cleaned.encode("utf-8")).hexdigest()[:9]
 
-    # Instagram (supports /p/, /reel/, /reels/, /tv/, and /username/reel/SHORTCODE)
-    if platform == "instagram":
+    # Instagram & General Social Media (supports /p/, /reel/, /reels/, /tv/, and /username/reel/SHORTCODE)
+    if platform in ("instagram", "social_media"):
         ig_patterns = [
-            r"instagram\.com\/(?:[a-zA-Z0-9._]+\/)?(?:p|reel|reels|tv)\/([a-zA-Z0-9_-]+)",
+            r"(?:instagram\.com|threads\.net|twitter\.com|x\.com)\/(?:[a-zA-Z0-9._]+\/)?(?:p|reel|reels|tv|status)\/([a-zA-Z0-9_-]+)",
         ]
         for pattern in ig_patterns:
             match = re.search(pattern, cleaned)
@@ -34,17 +34,17 @@ def extract_post_id(platform: str, post_url: str) -> str:
                 return match.group(1)
         if re.match(r"^[a-zA-Z0-9_-]{5,25}$", cleaned):
             return cleaned
-        return "ig_" + hashlib.md5(cleaned.encode("utf-8")).hexdigest()[:9]
+        return "sm_" + hashlib.md5(cleaned.encode("utf-8")).hexdigest()[:9]
 
-    # Flipkart (supports /p/itm... or pid=... or product-reviews/itm...)
-    if platform == "flipkart":
-        fk_item_match = re.search(r"/(?:p|product-reviews)/(itm[a-zA-Z0-9]+)", cleaned)
+    # Flipkart & E-Commerce (supports /p/itm... or pid=... or dp/... for Amazon)
+    if platform in ("flipkart", "ecommerce"):
+        fk_item_match = re.search(r"/(?:p|product-reviews|dp)/(?:itm)?([a-zA-Z0-9]{8,20})", cleaned)
         if fk_item_match:
             return fk_item_match.group(1)
-        pid_match = re.search(r"pid=([A-Z0-9]+)", cleaned)
+        pid_match = re.search(r"[?&]pid=([A-Z0-9]+)", cleaned)
         if pid_match:
             return pid_match.group(1)
-        return "fk_" + hashlib.md5(cleaned.encode("utf-8")).hexdigest()[:9]
+        return "ec_" + hashlib.md5(cleaned.encode("utf-8")).hexdigest()[:9]
 
     return "post_" + hashlib.md5(cleaned.encode("utf-8")).hexdigest()[:9]
 
@@ -257,14 +257,19 @@ class SocialCommentFetcher:
             if live_result is not None:
                 return live_result
 
-        # 3. Try live Instagram Graph API if platform == 'instagram' and token is set
-        if platform == "instagram" and self._has_valid_instagram_token():
-            live_ig = self._fetch_instagram_live(post_id, post_url, post_title, max_comments)
-            if live_ig is not None:
-                return live_ig
+        # 3. Try live Instagram Graph API or automated Social Media scraper (No API Key Required)
+        if platform in ("instagram", "social_media"):
+            if self._has_valid_instagram_token():
+                live_ig = self._fetch_instagram_live(post_id, post_url, post_title, max_comments)
+                if live_ig is not None:
+                    return live_ig
+            # Automated Web Scraper fallback for Social Media posts
+            rapid_ig = self._fetch_instagram_rapidapi(post_id, post_url, post_title, max_comments)
+            if rapid_ig is not None:
+                return rapid_ig
 
-        # 4. Live Flipkart E-Commerce Product Reviews Scraper
-        if platform == "flipkart" or "flipkart.com" in post_url.lower():
+        # 4. Live Automated E-Commerce Product Reviews Scraper (Flipkart / Stores - No API Key Required)
+        if platform in ("flipkart", "ecommerce") or "flipkart.com" in post_url.lower():
             fk_result = self._fetch_flipkart_live(post_id, post_url, post_title, max_comments)
             if fk_result is not None:
                 return fk_result
