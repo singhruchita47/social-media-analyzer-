@@ -37,13 +37,13 @@ export default function TopBar({
           : 'bg-white/95 border-slate-200/70 backdrop-blur-md'
       }`}
     >
-      {/* Left: Sidebar Toggle Button */}
-      <div className="flex items-center gap-3">
+      {/* Left: Sidebar Toggle Button (Compact) */}
+      <div className="flex items-center gap-2">
         {onToggleSidebar && (
           <button
             onClick={onToggleSidebar}
             title={sidebarOpen ? 'Hide Sidebar (साइडबार हटाएं)' : 'Show Sidebar (साइडबार दिखाएं)'}
-            className={`flex items-center gap-2 px-3.5 py-2.5 rounded-full text-xs font-bold border shrink-0 transition ${
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-bold border shrink-0 transition ${
               !sidebarOpen
                 ? isYT
                   ? 'bg-red-600 text-white border-red-600 shadow-sm hover:bg-red-700'
@@ -52,13 +52,13 @@ export default function TopBar({
                   : 'bg-blue-600 text-white border-blue-600 shadow-sm hover:bg-blue-700'
                 : darkMode
                 ? 'bg-slate-950 border-slate-800 text-slate-300 hover:bg-slate-800'
-                : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
             }`}
           >
             {sidebarOpen ? (
               <>
                 <PanelLeftClose
-                  className={`w-4 h-4 ${
+                  className={`w-3.5 h-3.5 ${
                     isYT ? 'text-red-500' : isIG ? 'text-pink-500' : 'text-blue-500'
                   }`}
                 />
@@ -66,7 +66,7 @@ export default function TopBar({
               </>
             ) : (
               <>
-                <PanelLeftOpen className="w-4 h-4" />
+                <PanelLeftOpen className="w-3.5 h-3.5" />
                 <span>Show Sidebar</span>
               </>
             )}
