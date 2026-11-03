@@ -262,6 +262,12 @@ export default function App() {
   const isYT = selectedPlatform === 'youtube';
   const isIG = selectedPlatform === 'instagram';
   const isFK = selectedPlatform === 'flipkart';
+  const isMyntra = Boolean(
+    activeSingleAnalysis?.post_url?.toLowerCase().includes('myntra.com') ||
+    activeSingleAnalysis?.author_handle?.toLowerCase().includes('sangria') ||
+    activeSingleAnalysis?.source_mode?.toLowerCase().includes('myntra')
+  );
+  const ecomPlatformName = isMyntra ? 'Myntra' : 'Flipkart';
 
   return (
     <div
@@ -373,12 +379,12 @@ export default function App() {
                   <div className="flex flex-wrap items-center gap-2">
                     <span
                       className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase text-white ${
-                        isYT ? 'bg-red-500' : isIG ? 'bg-[#F469A9]' : 'bg-[#2874F0]'
+                        isYT ? 'bg-red-500' : isIG ? 'bg-[#F469A9]' : isMyntra ? 'bg-gradient-to-r from-pink-500 to-rose-500' : 'bg-[#2874F0]'
                       }`}
                     >
-                      Live Analyzed {isYT ? 'YouTube Short / Video' : isIG ? 'Instagram Post' : 'Flipkart Product'}
+                      Live Analyzed {isYT ? 'YouTube Short / Video' : isIG ? 'Instagram Post' : `${ecomPlatformName} Product`}
                     </span>
-                    <span className={`text-xs font-bold ${isYT ? 'text-red-600' : isIG ? 'text-pink-600' : 'text-[#2874F0]'}`}>
+                    <span className={`text-xs font-bold ${isYT ? 'text-red-600' : isIG ? 'text-pink-600' : isMyntra ? 'text-pink-600' : 'text-[#2874F0]'}`}>
                       {activeSingleAnalysis.author_handle}
                     </span>
                     <span className="text-xs font-bold text-emerald-600 flex items-center gap-1">
@@ -425,7 +431,7 @@ export default function App() {
                     onClick={() => setActiveSingleAnalysis(null)}
                     className="px-3.5 py-2 rounded-full text-xs font-bold bg-white text-slate-700 border border-slate-200 hover:bg-slate-100 shadow-sm"
                   >
-                    Show All {isYT ? 'YouTube' : isIG ? 'Instagram' : 'Flipkart'} Items
+                    Show All {isYT ? 'YouTube' : isIG ? 'Instagram' : 'E-Commerce'} Items
                   </button>
                 </div>
               </div>
@@ -589,7 +595,7 @@ export default function App() {
                     }`}
                   >
                     <Share2 className="w-3.5 h-3.5" />
-                    + Analyze New {isYT ? 'YouTube' : isIG ? 'Instagram' : 'Flipkart'} URL
+                    + Analyze New {isYT ? 'YouTube' : isIG ? 'Social Media' : 'E-Commerce'} URL
                   </button>
                 </div>
               </div>

@@ -72,7 +72,7 @@ def _run_analysis_pipeline(
 ) -> AnalysisResult:
     eff_platform = (
         "instagram" if req.platform == "social_media"
-        else "flipkart" if req.platform == "ecommerce"
+        else "flipkart" if req.platform in ("ecommerce", "myntra")
         else req.platform
     )
     metadata, raw_comments = fetcher.fetch_comments(

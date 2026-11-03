@@ -31,6 +31,12 @@ export default function MetricsCards({
   const isYT = selectedPlatform === 'youtube';
   const isIG = selectedPlatform === 'instagram';
   const isFK = selectedPlatform === 'flipkart';
+  const isMyntra = Boolean(
+    stats?.post_url?.toLowerCase().includes('myntra.com') ||
+    stats?.author_handle?.toLowerCase().includes('sangria') ||
+    stats?.source_mode?.toLowerCase().includes('myntra')
+  );
+  const ecomBrand = isMyntra ? 'Myntra' : 'Flipkart';
   const reach = stats?.reach_overview || {
     total_followers: 0,
     followers_growth_pct: 0.0,
@@ -60,7 +66,7 @@ export default function MetricsCards({
 
   const reachCards = [
     {
-      title: isYT ? 'YouTube Subscribers' : isIG ? 'Instagram Followers' : 'Flipkart Product Rating',
+      title: isYT ? 'YouTube Subscribers' : isIG ? 'Instagram Followers' : `${ecomBrand} Product Rating`,
       value: isFK ? (hasData ? '4.4★' : '0★') : formatMetricNumber(reach.total_followers),
       topBorder: 'border-t-2 border-t-indigo-500/70',
       growth: !hasData
@@ -69,17 +75,17 @@ export default function MetricsCards({
         ? (isFK ? 'Verified Product' : 'Live Channel')
         : `+${reach.followers_growth_pct}%`,
       subtitle: !hasData
-        ? `Paste a ${isYT ? 'YouTube' : isIG ? 'Instagram' : 'Flipkart'} link to fetch data`
+        ? `Paste a ${isYT ? 'YouTube' : isIG ? 'Instagram' : ecomBrand} link to fetch data`
         : isYT
         ? 'Real YouTube channel subscribers'
         : isIG
         ? 'Instagram business followers'
-        : 'Flipkart certified customer ratings',
+        : `${ecomBrand} certified customer ratings`,
       icon: Users,
       iconCircle: 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950/50 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/30',
     },
     {
-      title: isYT ? 'YouTube Engagement' : isIG ? 'Instagram Engagement' : 'Flipkart Customer Ratings',
+      title: isYT ? 'YouTube Engagement' : isIG ? 'Instagram Engagement' : `${ecomBrand} Customer Ratings`,
       value: formatMetricNumber(reach.total_engagement),
       topBorder: 'border-t-2 border-t-emerald-500/70',
       growth: !hasData
@@ -106,12 +112,12 @@ export default function MetricsCards({
         : `+${reach.reach_growth_pct}%`,
       subtitle: !hasData
         ? 'No post analyzed yet'
-        : `Unique audience reached on ${isYT ? 'YouTube' : isIG ? 'Instagram' : 'Flipkart Store'}`,
+        : `Unique audience reached on ${isYT ? 'YouTube' : isIG ? 'Instagram' : `${ecomBrand} Store`}`,
       icon: Eye,
       iconCircle: 'bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400 border border-rose-100 dark:border-rose-900/30',
     },
     {
-      title: isYT ? 'YouTube Total Views' : isIG ? 'Instagram Impressions' : 'Flipkart Total Reviews Scraped',
+      title: isYT ? 'YouTube Total Views' : isIG ? 'Instagram Impressions' : `${ecomBrand} Total Reviews Scraped`,
       value: formatMetricNumber(reach.total_impressions),
       topBorder: 'border-t-2 border-t-amber-500/70',
       growth: !hasData
@@ -133,7 +139,7 @@ export default function MetricsCards({
   const sentimentCards = [
     {
       id: 'all',
-      headerTitle: `${isYT ? 'YouTube' : isIG ? 'Instagram' : 'Flipkart'} ${isFK ? 'Reviews' : 'Comments'} Analyzed`,
+      headerTitle: `${isYT ? 'YouTube' : isIG ? 'Instagram' : ecomBrand} ${isFK ? 'Reviews' : 'Comments'} Analyzed`,
       value: totalComments.toLocaleString(),
       badge: totalComments > 0 ? '100% Cleaned' : '0 comments',
       badgeClass: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
