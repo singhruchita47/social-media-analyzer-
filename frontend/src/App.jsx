@@ -268,7 +268,7 @@ export default function App() {
       className={`min-h-screen flex transition-colors duration-200 ${
         darkMode
           ? 'bg-slate-950 text-slate-100'
-          : 'bg-[#DCE2F0] text-slate-900'
+          : 'bg-[#F8FAFC] text-slate-900'
       }`}
     >
       {/* Left SaaS Sidebar Navigation (Collapsible!) */}
@@ -366,7 +366,7 @@ export default function App() {
                 className={`p-5 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
                   darkMode
                     ? 'bg-slate-900 border-slate-800'
-                    : 'bg-white border-white shadow-[0_8px_26px_-4px_rgba(30,41,59,0.09)]'
+                    : 'bg-white border-slate-200/80 shadow-sm'
                 }`}
               >
                 <div>
@@ -440,12 +440,12 @@ export default function App() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <span
-                    className={`w-10 h-10 rounded-2xl flex items-center justify-center text-white shadow-md ${
+                    className={`w-10 h-10 rounded-2xl flex items-center justify-center text-white shadow-sm ${
                       isYT
-                        ? 'bg-gradient-to-tr from-red-500 to-rose-600 shadow-red-500/20'
+                        ? 'bg-red-600'
                         : isIG
-                        ? 'bg-gradient-to-tr from-[#F47A38] via-[#F469A9] to-[#8B80F9] shadow-pink-500/20'
-                        : 'bg-gradient-to-tr from-[#2874F0] to-[#1258ca] shadow-blue-500/20'
+                        ? 'bg-pink-600'
+                        : 'bg-blue-600'
                     }`}
                   >
                     {isYT ? (
@@ -453,12 +453,12 @@ export default function App() {
                     ) : isIG ? (
                       <Instagram className="w-5 h-5" />
                     ) : (
-                      <ShoppingBag className="w-5 h-5 text-amber-300" />
+                      <ShoppingBag className="w-5 h-5" />
                     )}
                   </span>
                   <div>
                     <h1
-                      className={`text-2xl font-extrabold tracking-tight ${
+                      className={`text-2xl font-bold tracking-tight ${
                         darkMode ? 'text-white' : 'text-slate-900'
                       }`}
                     >
@@ -481,12 +481,12 @@ export default function App() {
                 <div className="flex items-center gap-2.5">
                   <button
                     onClick={() => setActiveTab('insights')}
-                    className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold text-white shadow-md transition ${
+                    className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold text-white shadow-sm transition ${
                       isYT
-                        ? 'bg-gradient-to-r from-red-500 to-rose-600 shadow-red-500/20 hover:opacity-95'
+                        ? 'bg-red-600 hover:bg-red-700'
                         : isIG
-                        ? 'bg-gradient-to-r from-[#F469A9] to-[#F47A38] shadow-pink-500/20 hover:opacity-95'
-                        : 'bg-gradient-to-r from-[#2874F0] to-[#1258ca] shadow-blue-500/20 hover:opacity-95'
+                        ? 'bg-pink-600 hover:bg-pink-700'
+                        : 'bg-blue-600 hover:bg-blue-700'
                     }`}
                   >
                     <MessageSquareHeart className="w-3.5 h-3.5" />
@@ -580,12 +580,12 @@ export default function App() {
                 <div className="flex items-center gap-2.5">
                   <button
                     onClick={() => setIsAnalyzeModalOpen(true)}
-                    className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold text-white shadow-md transition ${
+                    className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold text-white shadow-sm transition ${
                       isYT
-                        ? 'bg-gradient-to-r from-red-500 to-rose-600 shadow-red-500/20 hover:opacity-95'
+                        ? 'bg-red-600 hover:bg-red-700'
                         : isIG
-                        ? 'bg-gradient-to-r from-[#F469A9] to-[#F47A38] shadow-pink-500/20 hover:opacity-95'
-                        : 'bg-gradient-to-r from-[#2874F0] to-[#1258ca] shadow-blue-500/20 hover:opacity-95'
+                        ? 'bg-pink-600 hover:bg-pink-700'
+                        : 'bg-blue-600 hover:bg-blue-700'
                     }`}
                   >
                     <Share2 className="w-3.5 h-3.5" />

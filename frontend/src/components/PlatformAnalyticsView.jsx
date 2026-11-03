@@ -78,7 +78,7 @@ export default function PlatformAnalyticsView({
           className={`xl:col-span-7 rounded-2xl p-5 border ${
             darkMode
               ? 'bg-slate-900 border-slate-800'
-              : 'bg-white border-slate-200/80 ring-1 ring-white shadow-[0_12px_30px_-4px_rgba(15,23,42,0.14)]'
+              : 'bg-white border-slate-200/70 shadow-sm hover:shadow-md'
           }`}
         >
           <div className="flex items-center justify-between mb-4">
@@ -263,7 +263,7 @@ export default function PlatformAnalyticsView({
           className={`xl:col-span-5 rounded-2xl p-5 border flex flex-col justify-between ${
             darkMode
               ? 'bg-slate-900 border-slate-800'
-              : 'bg-white border-slate-200/80 ring-1 ring-white shadow-[0_12px_30px_-4px_rgba(15,23,42,0.14)]'
+              : 'bg-white border-slate-200/70 shadow-sm hover:shadow-md'
           }`}
         >
           <div className="flex items-center justify-between mb-3">

@@ -24,32 +24,32 @@ import {
 
 const STATUS_CONFIG = {
   Positive: {
-    pill: 'bg-[#E6FBF0] text-[#18B26B] dark:bg-emerald-500/15 dark:text-emerald-400 border-[#B8F2D4]',
-    bar: 'from-[#63E69A] to-[#28C76F]',
+    pill: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200/60',
+    bar: 'from-emerald-400 to-emerald-600',
     emoji: '😊',
     shortLabel: 'Positive',
   },
   Negative: {
-    pill: 'bg-[#FFEBEB] text-[#EC5A5A] dark:bg-rose-500/15 dark:text-rose-400 border-[#FFD1D1]',
-    bar: 'from-[#EA9267] to-[#EC5A5A]',
+    pill: 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border-rose-200/60',
+    bar: 'from-rose-400 to-rose-600',
     emoji: '😠',
     shortLabel: 'Negative',
   },
   Mixed: {
-    pill: 'bg-[#FFF5DF] text-[#D98200] dark:bg-amber-500/15 dark:text-amber-300 border-[#FDE08D]',
-    bar: 'from-[#FDE08D] to-[#EA9267]',
+    pill: 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-amber-200/60',
+    bar: 'from-amber-400 to-amber-600',
     emoji: '🤔',
     shortLabel: 'Mixed (Yes, But…)',
   },
   Neutral: {
-    pill: 'bg-[#EEF1FF] text-[#5B73E8] dark:bg-indigo-500/15 dark:text-indigo-400 border-[#C9D4FF]',
-    bar: 'from-[#8BA3F8] to-[#5B73E8]',
+    pill: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200',
+    bar: 'from-slate-400 to-slate-500',
     emoji: '😐',
     shortLabel: 'Neutral',
   },
   Question: {
-    pill: 'bg-[#EFF6FF] text-[#1D4ED8] dark:bg-blue-500/15 dark:text-blue-300 border-[#BFDBFE] dark:border-blue-500/30',
-    bar: 'from-[#60A5FA] to-[#1D4ED8]',
+    pill: 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 border-indigo-200/60',
+    bar: 'from-indigo-400 to-indigo-600',
     emoji: '❓',
     shortLabel: 'Question / Inquiry',
   },
@@ -467,17 +467,17 @@ export default function LiveInsightsPanel({
         className={`rounded-3xl p-6 border ${
           darkMode
             ? 'bg-slate-900 border-slate-800'
-            : 'bg-white border-white shadow-[0_8px_26px_-4px_rgba(30,41,59,0.09)]'
+            : 'bg-white border-slate-200/70 shadow-sm'
         }`}
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-rose-500/15 text-rose-600 flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-2xl bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400 flex items-center justify-center shrink-0 border border-rose-100 dark:border-rose-900/30">
               <AlertTriangle className="w-5 h-5" />
             </div>
             <div>
               <h3
-                className={`font-extrabold text-base ${
+                className={`font-bold text-base ${
                   darkMode ? 'text-white' : 'text-slate-900'
                 }`}
               >
@@ -492,55 +492,51 @@ export default function LiveInsightsPanel({
           {problemFilter !== 'all' && (
             <button
               onClick={() => setProblemFilter('all')}
-              className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-orange-500 text-white shadow-sm self-start"
+              className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-slate-900 text-white dark:bg-orange-500 shadow-sm self-start"
             >
               Showing Filtered Problems × (Show All)
             </button>
           )}
         </div>
 
-        {/* 4 Problem Category Filter Cards (Highlighted with Deep Dark Numbers!) */}
+        {/* 4 Problem Category Filter Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
             {
               key: 'price',
               title: '💰 High Price Issue',
               count: counts.price,
-              valueColor: 'text-[#2E2787]',
               desc: 'Customer liked the product, but found the price too high',
-              headerBg: 'bg-[#4F46E5] text-white',
-              activeBorder: 'border-[#4F46E5] ring-2 ring-[#4F46E5]/30',
-              badgeBg: 'bg-[#EEF1FF] text-[#2E2787]',
+              headerBg: 'bg-indigo-50/70 dark:bg-indigo-950/40 border-b border-indigo-100/70 dark:border-indigo-900/30 text-indigo-800 dark:text-indigo-300',
+              activeBorder: 'border-indigo-500 ring-2 ring-indigo-500/20',
+              badgeBg: 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border border-indigo-200/50',
             },
             {
               key: 'delivery',
               title: '🚚 Late Delivery Issue',
               count: counts.delivery,
-              valueColor: 'text-[#991B1B]',
               desc: 'Delayed shipping, slow courier, or late delivery',
-              headerBg: 'bg-[#EF4444] text-white',
-              activeBorder: 'border-[#EF4444] ring-2 ring-[#EF4444]/30',
-              badgeBg: 'bg-[#FEF2F2] text-[#991B1B]',
+              headerBg: 'bg-rose-50/70 dark:bg-rose-950/40 border-b border-rose-100/70 dark:border-rose-900/30 text-rose-800 dark:text-rose-300',
+              activeBorder: 'border-rose-500 ring-2 ring-rose-500/20',
+              badgeBg: 'bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200/50',
             },
             {
               key: 'quality',
               title: '⚠️ Quality / Result Issue',
               count: counts.quality,
-              valueColor: 'text-[#92400E]',
               desc: 'Not happy with product quality, texture, or results',
-              headerBg: 'bg-[#F59E0B] text-white',
-              activeBorder: 'border-[#F59E0B] ring-2 ring-[#F59E0B]/40',
-              badgeBg: 'bg-[#FFF6E0] text-[#92400E]',
+              headerBg: 'bg-amber-50/70 dark:bg-amber-950/40 border-b border-amber-100/70 dark:border-amber-900/30 text-amber-800 dark:text-amber-300',
+              activeBorder: 'border-amber-500 ring-2 ring-amber-500/20',
+              badgeBg: 'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200/50',
             },
             {
               key: 'packaging_support',
               title: '📦 Packaging & Support',
               count: counts.packaging_support,
-              valueColor: 'text-[#065F46]',
               desc: 'Leaking/damaged packaging or slow support response',
-              headerBg: 'bg-[#10B981] text-white',
-              activeBorder: 'border-[#10B981] ring-2 ring-[#10B981]/30',
-              badgeBg: 'bg-[#E6FBF0] text-[#065F46]',
+              headerBg: 'bg-emerald-50/70 dark:bg-emerald-950/40 border-b border-emerald-100/70 dark:border-emerald-900/30 text-emerald-800 dark:text-emerald-300',
+              activeBorder: 'border-emerald-500 ring-2 ring-emerald-500/20',
+              badgeBg: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/50',
             },
           ].map((card) => {
             const isSelected = problemFilter === card.key;
@@ -550,35 +546,35 @@ export default function LiveInsightsPanel({
                 onClick={() =>
                   setProblemFilter(isSelected ? 'all' : card.key)
                 }
-                className={`rounded-2xl overflow-hidden border cursor-pointer transition-all duration-200 hover:-translate-y-1 ${
+                className={`rounded-2xl overflow-hidden border cursor-pointer transition-all duration-200 hover:-translate-y-0.5 ${
                   isSelected
                     ? card.activeBorder
                     : darkMode
                     ? 'bg-slate-950 border-slate-800 hover:border-slate-700'
-                    : 'bg-white border-slate-200/90 shadow-[0_8px_24px_-4px_rgba(15,23,42,0.12)] hover:shadow-[0_14px_30px_-4px_rgba(15,23,42,0.18)]'
+                    : 'bg-white border-slate-200/70 shadow-sm hover:shadow-md'
                 }`}
               >
                 <div
-                  className={`px-4 py-2.5 flex items-center justify-between text-xs font-extrabold ${card.headerBg}`}
+                  className={`px-4 py-2.5 flex items-center justify-between text-xs font-bold ${card.headerBg}`}
                 >
                   <span>{card.title}</span>
                 </div>
                 <div className="p-4">
                   <div className="flex items-center gap-2.5 mb-1">
                     <span
-                      className={`text-3xl font-black tracking-tight ${
-                        darkMode ? 'text-white' : card.valueColor
+                      className={`text-3xl font-extrabold tracking-tight ${
+                        darkMode ? 'text-white' : 'text-slate-900'
                       }`}
                     >
                       {card.count}
                     </span>
                     <span
-                      className={`px-2.5 py-0.5 rounded-full text-[11px] font-extrabold ${card.badgeBg}`}
+                      className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${card.badgeBg}`}
                     >
                       {card.count === 1 ? '1 comment' : `${card.count} comments`}
                     </span>
                   </div>
-                  <p className="text-xs font-semibold text-slate-600 leading-relaxed">
+                  <p className="text-xs text-slate-500 leading-relaxed">
                     {card.desc}
                   </p>
                 </div>
@@ -595,7 +591,7 @@ export default function LiveInsightsPanel({
         className={`rounded-3xl border overflow-hidden ${
           darkMode
             ? 'bg-slate-900 border-slate-800'
-            : 'bg-white border-white shadow-[0_8px_26px_-4px_rgba(30,41,59,0.09)]'
+            : 'bg-white border-slate-200/70 shadow-sm'
         }`}
       >
         {/* Top Toolbar */}

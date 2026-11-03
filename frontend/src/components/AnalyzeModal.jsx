@@ -82,11 +82,11 @@ export default function AnalyzeModal({
         </button>
 
         <div className="flex items-center gap-3 mb-5">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-orange-500 via-pink-500 to-purple-600 flex items-center justify-center text-white shadow-md shadow-orange-500/20">
-            <Sparkles className="w-5 h-5" />
+          <div className="w-10 h-10 rounded-2xl bg-slate-900 text-white dark:bg-slate-800 flex items-center justify-center shadow-sm">
+            <Sparkles className="w-5 h-5 text-amber-400" />
           </div>
           <div>
-            <h2 className="text-lg font-extrabold">
+            <h2 className="text-lg font-bold">
               Analyze Social or E-Commerce Link
             </h2>
             <p className="text-xs text-slate-400">
@@ -107,10 +107,10 @@ export default function AnalyzeModal({
                 onClick={() => setPlatform('youtube')}
                 className={`py-2 px-3 rounded-xl border flex items-center justify-center gap-1.5 text-xs font-bold transition ${
                   platform === 'youtube'
-                    ? 'bg-red-500 text-white border-red-500 shadow-sm'
+                    ? 'bg-red-600 text-white border-red-600 shadow-sm'
                     : darkMode
                     ? 'bg-slate-950 border-slate-800 text-slate-400'
-                    : 'bg-[#F6F7FB] border-slate-200 text-slate-600'
+                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
                 }`}
               >
                 <Youtube className="w-4 h-4 text-white" />
@@ -122,10 +122,10 @@ export default function AnalyzeModal({
                 onClick={() => setPlatform('instagram')}
                 className={`py-2 px-3 rounded-xl border flex items-center justify-center gap-1.5 text-xs font-bold transition ${
                   platform === 'instagram'
-                    ? 'bg-gradient-to-r from-orange-500 to-pink-500 text-white border-pink-500 shadow-sm'
+                    ? 'bg-pink-600 text-white border-pink-600 shadow-sm'
                     : darkMode
                     ? 'bg-slate-950 border-slate-800 text-slate-400'
-                    : 'bg-[#F6F7FB] border-slate-200 text-slate-600'
+                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
                 }`}
               >
                 <Instagram className="w-4 h-4" />
@@ -137,13 +137,13 @@ export default function AnalyzeModal({
                 onClick={() => setPlatform('flipkart')}
                 className={`py-2 px-3 rounded-xl border flex items-center justify-center gap-1.5 text-xs font-bold transition ${
                   platform === 'flipkart'
-                    ? 'bg-[#2874F0] text-white border-blue-600 shadow-sm'
+                    ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
                     : darkMode
                     ? 'bg-slate-950 border-slate-800 text-slate-400'
-                    : 'bg-[#F6F7FB] border-slate-200 text-slate-600'
+                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
                 }`}
               >
-                <ShoppingBag className="w-4 h-4 text-amber-300" />
+                <ShoppingBag className="w-4 h-4" />
                 Flipkart
               </button>
             </div>
@@ -237,12 +237,12 @@ export default function AnalyzeModal({
             <button
               type="submit"
               disabled={isAnalyzing}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold text-white shadow-md transition disabled:opacity-50 ${
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold text-white shadow-sm transition disabled:opacity-50 ${
                 platform === 'youtube'
-                  ? 'bg-gradient-to-r from-red-500 to-rose-600 shadow-red-500/25 hover:opacity-95'
+                  ? 'bg-red-600 hover:bg-red-700'
                   : platform === 'instagram'
-                  ? 'bg-gradient-to-r from-[#F469A9] to-[#F47A38] shadow-pink-500/25 hover:opacity-95'
-                  : 'bg-gradient-to-r from-[#2874F0] to-[#1258ca] shadow-blue-500/25 hover:opacity-95'
+                  ? 'bg-pink-600 hover:bg-pink-700'
+                  : 'bg-blue-600 hover:bg-blue-700'
               }`}
             >
               {isAnalyzing ? (

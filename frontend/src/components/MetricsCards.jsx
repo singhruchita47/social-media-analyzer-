@@ -9,7 +9,6 @@ import {
   Frown,
   Meh,
   TrendingUp,
-  ArrowUpRight,
 } from 'lucide-react';
 
 function formatMetricNumber(num) {
@@ -63,8 +62,7 @@ export default function MetricsCards({
     {
       title: isYT ? 'YouTube Subscribers' : isIG ? 'Instagram Followers' : 'Flipkart Product Rating',
       value: isFK ? (hasData ? '4.4★' : '0★') : formatMetricNumber(reach.total_followers),
-      valueColor: 'text-[#2E2787]',
-      topBorder: 'border-t-4 border-t-[#4F46E5]',
+      topBorder: 'border-t-2 border-t-indigo-500/70',
       growth: !hasData
         ? '0%'
         : isLiveSinglePost
@@ -78,13 +76,12 @@ export default function MetricsCards({
         ? 'Instagram business followers'
         : 'Flipkart certified customer ratings',
       icon: Users,
-      iconCircle: 'bg-[#4F46E5] text-white shadow-md shadow-[#4F46E5]/30',
+      iconCircle: 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950/50 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/30',
     },
     {
       title: isYT ? 'YouTube Engagement' : isIG ? 'Instagram Engagement' : 'Flipkart Customer Ratings',
       value: formatMetricNumber(reach.total_engagement),
-      valueColor: 'text-[#065F46]',
-      topBorder: 'border-t-4 border-t-[#10B981]',
+      topBorder: 'border-t-2 border-t-emerald-500/70',
       growth: !hasData
         ? '0%'
         : isLiveSinglePost
@@ -96,13 +93,12 @@ export default function MetricsCards({
         ? `${(stats?.total_engagement_likes || 0).toLocaleString()} 5-star likes • ${totalComments.toLocaleString()} reviews`
         : `${(stats?.total_engagement_likes || 0).toLocaleString()} likes • ${totalComments.toLocaleString()} comments`,
       icon: Heart,
-      iconCircle: 'bg-[#10B981] text-white shadow-md shadow-[#10B981]/30',
+      iconCircle: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30',
     },
     {
       title: isYT ? 'YouTube Unique Reach' : isIG ? 'Instagram Reach' : 'Product Impressions / Reach',
       value: formatMetricNumber(reach.total_reach),
-      valueColor: 'text-[#991B1B]',
-      topBorder: 'border-t-4 border-t-[#EF4444]',
+      topBorder: 'border-t-2 border-t-rose-500/70',
       growth: !hasData
         ? '0%'
         : isLiveSinglePost
@@ -112,13 +108,12 @@ export default function MetricsCards({
         ? 'No post analyzed yet'
         : `Unique audience reached on ${isYT ? 'YouTube' : isIG ? 'Instagram' : 'Flipkart Store'}`,
       icon: Eye,
-      iconCircle: 'bg-[#EF4444] text-white shadow-md shadow-[#EF4444]/30',
+      iconCircle: 'bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400 border border-rose-100 dark:border-rose-900/30',
     },
     {
       title: isYT ? 'YouTube Total Views' : isIG ? 'Instagram Impressions' : 'Flipkart Total Reviews Scraped',
       value: formatMetricNumber(reach.total_impressions),
-      valueColor: 'text-[#92400E]',
-      topBorder: 'border-t-4 border-t-[#F59E0B]',
+      topBorder: 'border-t-2 border-t-amber-500/70',
       growth: !hasData
         ? '0%'
         : isLiveSinglePost
@@ -130,56 +125,55 @@ export default function MetricsCards({
         ? 'Verified buyer reviews analyzed'
         : `Exact ${isYT ? 'YouTube viewCount' : 'Instagram impressions'}`,
       icon: BarChart2,
-      iconCircle: 'bg-[#F59E0B] text-white shadow-md shadow-[#F59E0B]/30',
+      iconCircle: 'bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400 border border-amber-100 dark:border-amber-900/30',
     },
   ];
 
-  // Learner Hub + Folder-Header Highlighted Cards with Deep Dark Numbers
+  // Refined Minimalist Sentiment Cards
   const sentimentCards = [
     {
       id: 'all',
       headerTitle: `${isYT ? 'YouTube' : isIG ? 'Instagram' : 'Flipkart'} ${isFK ? 'Reviews' : 'Comments'} Analyzed`,
       value: totalComments.toLocaleString(),
-      valueColor: 'text-[#2E2787]',
       badge: totalComments > 0 ? '100% Cleaned' : '0 comments',
-      badgeGood: true,
-      subtitle: 'Cleaned via Pandas & scored by Gemini',
-      headerBg: 'bg-[#4F46E5]',
+      badgeClass: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
+      subtitle: 'Cleaned via Pandas & scored by AI',
+      headerBg: 'bg-slate-50 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-800 text-slate-800 dark:text-slate-200',
       icon: MessageSquareText,
+      iconColor: 'text-slate-500',
     },
     {
       id: 'Positive',
       headerTitle: 'Positive Comments',
       value: `${Math.round(bd.primary_positive_pct ?? 0)}%`,
-      valueColor: 'text-[#065F46]',
       badge: `${(bd.positive_count ?? 0).toLocaleString()} happy`,
-      badgeGood: true,
+      badgeClass: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200/50',
       subtitle: 'Positive audience appreciation & praise',
-      headerBg: 'bg-[#10B981]',
+      headerBg: 'bg-emerald-50/60 dark:bg-emerald-950/30 border-b border-emerald-100/70 dark:border-emerald-900/30 text-emerald-800 dark:text-emerald-300',
       icon: SmilePlus,
+      iconColor: 'text-emerald-600',
     },
     {
       id: 'Negative',
       headerTitle: 'Negative / Problem Comments',
       value: `${Math.round(bd.primary_negative_pct ?? 0)}%`,
-      valueColor: 'text-[#991B1B]',
       badge: `${(bd.negative_count ?? 0).toLocaleString()} issues`,
-      badgeGood: false,
+      badgeClass: 'bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300 border border-rose-200/50',
       subtitle: 'Price, delivery & quality complaints',
-      headerBg: 'bg-[#EF4444]',
+      headerBg: 'bg-rose-50/60 dark:bg-rose-950/30 border-b border-rose-100/70 dark:border-rose-900/30 text-rose-800 dark:text-rose-300',
       icon: Frown,
+      iconColor: 'text-rose-600',
     },
     {
       id: 'Neutral',
       headerTitle: 'Neutral & Mixed Feedback',
       value: `${Math.round(bd.primary_neutral_pct ?? 0)}%`,
-      valueColor: 'text-[#92400E]',
       badge: `${((bd.neutral_count ?? 0) + (bd.mixed_count ?? 0)).toLocaleString()} threads`,
-      badgeGood: false,
+      badgeClass: 'bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-200/50',
       subtitle: 'Contrastive ("Yes, But…") & neutral statements',
-      headerBg: 'bg-[#F59E0B]',
-      headerTextDark: false,
+      headerBg: 'bg-amber-50/60 dark:bg-amber-950/30 border-b border-amber-100/70 dark:border-amber-900/30 text-amber-800 dark:text-amber-300',
       icon: Meh,
+      iconColor: 'text-amber-600',
     },
   ];
 
@@ -192,22 +186,22 @@ export default function MetricsCards({
             return (
               <div
                 key={idx}
-                className={`rounded-2xl p-5 border transition-all duration-200 hover:-translate-y-1 ${card.topBorder} ${
+                className={`rounded-2xl p-5 border transition-all duration-200 hover:-translate-y-0.5 ${card.topBorder} ${
                   darkMode
-                    ? 'bg-slate-900 border-slate-800'
-                    : 'bg-white border-slate-200/80 ring-1 ring-white shadow-[0_12px_30px_-4px_rgba(15,23,42,0.14)] hover:shadow-[0_18px_38px_-4px_rgba(15,23,42,0.2)]'
+                    ? 'bg-slate-900 border-slate-800 hover:border-slate-700'
+                    : 'bg-white border-slate-200/70 shadow-sm hover:shadow-md'
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <span
-                    className={`text-xs font-extrabold uppercase tracking-wide ${
-                      darkMode ? 'text-slate-300' : 'text-slate-700'
+                    className={`text-xs font-bold uppercase tracking-wide ${
+                      darkMode ? 'text-slate-400' : 'text-slate-500'
                     }`}
                   >
                     {card.title}
                   </span>
                   <div
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center ${card.iconCircle}`}
+                    className={`w-9 h-9 rounded-xl flex items-center justify-center ${card.iconCircle}`}
                   >
                     <Icon className="w-4 h-4" />
                   </div>
@@ -215,17 +209,17 @@ export default function MetricsCards({
 
                 <div className="mt-3 flex items-baseline gap-2.5">
                   <h3
-                    className={`text-3xl font-black tracking-tight ${
-                      darkMode ? 'text-white' : card.valueColor
+                    className={`text-3xl font-extrabold tracking-tight ${
+                      darkMode ? 'text-white' : 'text-slate-900'
                     }`}
                   >
                     {card.value}
                   </h3>
                   <span
-                    className={`inline-flex items-center gap-0.5 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold ${
+                    className={`inline-flex items-center gap-0.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
                       hasData
-                        ? 'bg-emerald-500/20 text-[#065F46] dark:text-emerald-300'
-                        : 'bg-slate-200 text-slate-600 dark:bg-slate-800'
+                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300'
+                        : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
                     }`}
                   >
                     <TrendingUp className="w-3 h-3" />
@@ -233,7 +227,7 @@ export default function MetricsCards({
                   </span>
                 </div>
 
-                <p className="text-xs font-semibold text-slate-600 mt-2">
+                <p className="text-xs text-slate-500 mt-2">
                   {card.subtitle}
                 </p>
               </div>
@@ -252,43 +246,37 @@ export default function MetricsCards({
                 onClick={() =>
                   onSelectSentiment && onSelectSentiment(card.id)
                 }
-                className={`rounded-2xl overflow-hidden border cursor-pointer transition-all duration-200 hover:-translate-y-1 ${
+                className={`rounded-2xl overflow-hidden border cursor-pointer transition-all duration-200 hover:-translate-y-0.5 ${
                   darkMode
-                    ? 'bg-slate-900 border-slate-800'
-                    : 'bg-white border-slate-200/80 ring-1 ring-white shadow-[0_12px_30px_-4px_rgba(15,23,42,0.14)] hover:shadow-[0_18px_38px_-4px_rgba(15,23,42,0.2)]'
+                    ? 'bg-slate-900 border-slate-800 hover:border-slate-700'
+                    : 'bg-white border-slate-200/70 shadow-sm hover:shadow-md'
                 }`}
               >
                 <div
-                  className={`px-4 py-3 flex items-center justify-between ${card.headerBg} ${
-                    card.headerTextDark ? 'text-slate-900' : 'text-white'
-                  }`}
+                  className={`px-4 py-2.5 flex items-center justify-between text-xs font-bold ${card.headerBg}`}
                 >
-                  <span className="text-xs font-extrabold tracking-tight">
+                  <span className="tracking-tight">
                     {card.headerTitle}
                   </span>
-                  <Icon className="w-4 h-4 opacity-95" />
+                  <Icon className={`w-4 h-4 ${card.iconColor || ''}`} />
                 </div>
 
                 <div className="p-5">
                   <div className="flex items-center gap-2.5">
                     <span
-                      className={`text-3xl font-black tracking-tight ${
-                        darkMode ? 'text-white' : card.valueColor
+                      className={`text-3xl font-extrabold tracking-tight ${
+                        darkMode ? 'text-white' : 'text-slate-900'
                       }`}
                     >
                       {card.value}
                     </span>
                     <span
-                      className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-full ${
-                        card.badgeGood
-                          ? 'bg-emerald-500/20 text-[#065F46]'
-                          : 'bg-rose-500/20 text-[#991B1B]'
-                      }`}
+                      className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${card.badgeClass}`}
                     >
                       {card.badge}
                     </span>
                   </div>
-                  <p className="text-xs font-semibold text-slate-600 mt-1.5">
+                  <p className="text-xs text-slate-500 mt-1.5">
                     {card.subtitle}
                   </p>
                 </div>

@@ -27,7 +27,7 @@ export default function SentimentDonutChart({ stats, darkMode, onSelectSentiment
 
   const hasData = totalComments > 0;
 
-  // Exact Sociafy Donut Palette (Warm Orange, Fresh Mint Green, Sky Cyan, Royal Blue for Questions)
+  // Clean, modern SaaS Donut Palette (Emerald Positive, Indigo Questions, Slate Neutral, Rose Negative)
   const chartData = hasData
     ? [
         {
@@ -35,7 +35,7 @@ export default function SentimentDonutChart({ stats, darkMode, onSelectSentiment
           label: 'Positive Comments',
           value: bd.positive_count || 0,
           pct: Math.round(bd.primary_positive_pct ?? 0),
-          color: '#F48245',
+          color: '#10B981',
         },
         ...(bd.question_count > 0
           ? [
@@ -44,7 +44,7 @@ export default function SentimentDonutChart({ stats, darkMode, onSelectSentiment
                 label: 'Customer Inquiries',
                 value: bd.question_count,
                 pct: Math.round(bd.primary_question_pct ?? 0),
-                color: '#3B82F6',
+                color: '#6366F1',
               },
             ]
           : []),
@@ -53,14 +53,14 @@ export default function SentimentDonutChart({ stats, darkMode, onSelectSentiment
           label: 'Neutral / Mixed',
           value: (bd.neutral_count || 0) + (bd.mixed_count || 0),
           pct: Math.round(bd.primary_neutral_pct ?? 0),
-          color: '#5CE080',
+          color: '#94A3B8',
         },
         {
           name: 'Negative',
           label: 'Negative Comments',
           value: bd.negative_count || 0,
           pct: Math.round(bd.primary_negative_pct ?? 0),
-          color: '#2CC5F6',
+          color: '#F43F5E',
         },
       ]
     : [
@@ -113,7 +113,7 @@ export default function SentimentDonutChart({ stats, darkMode, onSelectSentiment
       className={`rounded-2xl p-5 border flex flex-col justify-between transition-all h-full ${
         darkMode
           ? 'bg-slate-900 border-slate-800'
-          : 'bg-white border-slate-200/80 ring-1 ring-white shadow-[0_12px_30px_-4px_rgba(15,23,42,0.14)]'
+          : 'bg-white border-slate-200/70 shadow-sm hover:shadow-md'
       }`}
     >
       {/* Header */}

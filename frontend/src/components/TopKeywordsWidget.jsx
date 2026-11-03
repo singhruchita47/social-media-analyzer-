@@ -12,8 +12,8 @@ import {
 } from 'recharts';
 import { Filter } from 'lucide-react';
 
-// Exact Sociafy palette from Image 1 (Orchid Pink, Coral Orange, Mint Green, Sky Cyan, Royal Indigo)
-const BAR_COLORS = ['#E052E6', '#F47A38', '#5CE080', '#2CC5F6', '#473BF0'];
+// Clean, cohesive palette (Indigo, Violet, Blue, Sky, Teal)
+const BAR_COLORS = ['#6366F1', '#8B5CF6', '#3B82F6', '#0284C7', '#0D9488'];
 
 export default function TopKeywordsWidget({
   keywords = [],
@@ -32,7 +32,7 @@ export default function TopKeywordsWidget({
       className={`rounded-2xl p-5 border flex flex-col justify-between transition-all h-full ${
         darkMode
           ? 'bg-slate-900 border-slate-800'
-          : 'bg-white border-slate-200/80 ring-1 ring-white shadow-[0_12px_30px_-4px_rgba(15,23,42,0.14)]'
+          : 'bg-white border-slate-200/70 shadow-sm hover:shadow-md'
       }`}
     >
       {/* Header */}

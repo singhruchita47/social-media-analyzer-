@@ -57,7 +57,7 @@ export default function EngagementTrendsChart({
       className={`rounded-2xl p-5 border flex flex-col justify-between transition-all h-full ${
         darkMode
           ? 'bg-slate-900 border-slate-800'
-          : 'bg-white border-slate-200/80 ring-1 ring-white shadow-[0_12px_30px_-4px_rgba(15,23,42,0.14)]'
+          : 'bg-white border-slate-200/70 shadow-sm hover:shadow-md'
       }`}
     >
       {/* Header */}
