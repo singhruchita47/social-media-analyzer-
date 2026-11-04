@@ -17,6 +17,8 @@ export default function EngagementTrendsChart({
   darkMode,
 }) {
   const isYT = selectedPlatform === 'youtube';
+  const isIG = selectedPlatform === 'instagram';
+  const isFK = selectedPlatform === 'flipkart';
   const trends = stats?.engagement_trends || [];
 
   // Build platform-only trend series (never mixing YT and IG)
