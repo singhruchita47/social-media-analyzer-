@@ -262,12 +262,21 @@ export default function App() {
   const isYT = selectedPlatform === 'youtube';
   const isIG = selectedPlatform === 'instagram';
   const isFK = selectedPlatform === 'flipkart';
-  const isMyntra = Boolean(
-    activeSingleAnalysis?.post_url?.toLowerCase().includes('myntra.com') ||
-    activeSingleAnalysis?.author_handle?.toLowerCase().includes('sangria') ||
-    activeSingleAnalysis?.source_mode?.toLowerCase().includes('myntra')
-  );
-  const ecomPlatformName = isMyntra ? 'Myntra' : 'Flipkart';
+  const getDynamicBrand = (post) => {
+    if (!post) return 'Flipkart';
+    const text = `${post.post_url || ''} ${post.author_handle || ''} ${post.source_mode || ''}`.toLowerCase();
+    if (text.includes('myntra') || text.includes('sangria')) return 'Myntra';
+    if (text.includes('amazon')) return 'Amazon';
+    if (text.includes('meesho')) return 'Meesho';
+    if (text.includes('nykaa')) return 'Nykaa';
+    if (text.includes('ajio')) return 'Ajio';
+    if (text.includes('reddit')) return 'Reddit';
+    if (text.includes('shopify')) return 'Shopify';
+    if (text.includes('csv') || text.includes('custom')) return 'Custom Import';
+    return 'Flipkart';
+  };
+  const ecomPlatformName = getDynamicBrand(activeSingleAnalysis);
+  const isMyntra = ecomPlatformName === 'Myntra';
 
   return (
     <div

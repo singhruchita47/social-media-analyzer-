@@ -31,12 +31,20 @@ export default function MetricsCards({
   const isYT = selectedPlatform === 'youtube';
   const isIG = selectedPlatform === 'instagram';
   const isFK = selectedPlatform === 'flipkart';
-  const isMyntra = Boolean(
-    stats?.post_url?.toLowerCase().includes('myntra.com') ||
-    stats?.author_handle?.toLowerCase().includes('sangria') ||
-    stats?.source_mode?.toLowerCase().includes('myntra')
-  );
-  const ecomBrand = isMyntra ? 'Myntra' : 'Flipkart';
+  const getDynamicBrand = (st) => {
+    if (!st) return 'Flipkart';
+    const text = `${st.post_url || ''} ${st.author_handle || ''} ${st.source_mode || ''}`.toLowerCase();
+    if (text.includes('myntra') || text.includes('sangria')) return 'Myntra';
+    if (text.includes('amazon')) return 'Amazon';
+    if (text.includes('meesho')) return 'Meesho';
+    if (text.includes('nykaa')) return 'Nykaa';
+    if (text.includes('ajio')) return 'Ajio';
+    if (text.includes('reddit')) return 'Reddit';
+    if (text.includes('shopify')) return 'Shopify';
+    if (text.includes('csv') || text.includes('custom')) return 'Custom Import';
+    return 'Flipkart';
+  };
+  const ecomBrand = getDynamicBrand(stats);
   const reach = stats?.reach_overview || {
     total_followers: 0,
     followers_growth_pct: 0.0,
