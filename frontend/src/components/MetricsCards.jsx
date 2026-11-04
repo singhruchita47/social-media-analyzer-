@@ -8,6 +8,7 @@ import {
   SmilePlus,
   Frown,
   Meh,
+  HelpCircle,
   TrendingUp,
 } from 'lucide-react';
 
@@ -182,17 +183,29 @@ export default function MetricsCards({
       icon: Frown,
       iconColor: 'text-rose-600',
     },
-    {
-      id: 'Neutral',
-      headerTitle: 'Neutral & Mixed Feedback',
-      value: `${Math.round(bd.primary_neutral_pct ?? 0)}%`,
-      badge: `${((bd.neutral_count ?? 0) + (bd.mixed_count ?? 0)).toLocaleString()} threads`,
-      badgeClass: 'bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-200/50',
-      subtitle: 'Contrastive ("Yes, But…") & neutral statements',
-      headerBg: 'bg-amber-50/60 dark:bg-amber-950/30 border-b border-amber-100/70 dark:border-amber-900/30 text-amber-800 dark:text-amber-300',
-      icon: Meh,
-      iconColor: 'text-amber-600',
-    },
+    (bd.question_count ?? 0) > 0 && ((bd.neutral_count ?? 0) + (bd.mixed_count ?? 0)) === 0
+      ? {
+          id: 'Question',
+          headerTitle: 'Questions & Inquiries',
+          value: `${Math.round(bd.primary_question_pct ?? 0)}%`,
+          badge: `${(bd.question_count ?? 0).toLocaleString()} inquiries`,
+          badgeClass: 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300 border border-indigo-200/50',
+          subtitle: 'Product link, price queries & buying requests',
+          headerBg: 'bg-indigo-50/60 dark:bg-indigo-950/30 border-b border-indigo-100/70 dark:border-indigo-900/30 text-indigo-800 dark:text-indigo-300',
+          icon: HelpCircle,
+          iconColor: 'text-indigo-600',
+        }
+      : {
+          id: 'Neutral',
+          headerTitle: 'Neutral & Mixed Feedback',
+          value: `${Math.round(bd.primary_neutral_pct ?? 0)}%`,
+          badge: `${((bd.neutral_count ?? 0) + (bd.mixed_count ?? 0)).toLocaleString()} threads`,
+          badgeClass: 'bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-200/50',
+          subtitle: 'Contrastive ("Yes, But…") & neutral statements',
+          headerBg: 'bg-amber-50/60 dark:bg-amber-950/30 border-b border-amber-100/70 dark:border-amber-900/30 text-amber-800 dark:text-amber-300',
+          icon: Meh,
+          iconColor: 'text-amber-600',
+        },
   ];
 
   return (

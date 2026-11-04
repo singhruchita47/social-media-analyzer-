@@ -728,11 +728,11 @@ def get_aggregated_stats(
         )
     )
 
-    # Deduplicate recent comments stream while keeping diverse sentiments
+    # Deduplicate recent comments stream by unique comment_id
     seen_recent = set()
     recent_comments: List[CommentItem] = []
     for c in all_comments:
-        key = (c.platform, c.cleaned_text.lower().strip())
+        key = c.comment_id
         if key not in seen_recent:
             seen_recent.add(key)
             recent_comments.append(c)
