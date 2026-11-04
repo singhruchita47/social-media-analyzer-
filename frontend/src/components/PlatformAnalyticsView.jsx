@@ -109,11 +109,11 @@ export default function PlatformAnalyticsView({
                   {isYT
                     ? 'YouTube Videos & Shorts — Real Reach & Views Overview'
                     : isIG
-                    ? 'Instagram Posts & Reels — Reach & Impressions Overview'
-                    : 'Flipkart Products — Customer Reviews & Star Ratings Overview'}
+                    ? 'Social Media Posts & Reels — Reach & Impressions Overview'
+                    : 'E-Commerce Products — Customer Reviews & Star Ratings Overview'}
                 </h3>
                 <p className="text-[11px] text-slate-400">
-                  Showing only {isYT ? 'YouTube' : isIG ? 'Instagram' : 'Flipkart'} items — click any row to open its Analysis
+                  Showing only {isYT ? 'YouTube' : isIG ? 'Social Media' : 'E-Commerce'} items — click any row to open its Analysis
                 </p>
               </div>
             </div>
@@ -126,7 +126,7 @@ export default function PlatformAnalyticsView({
                   : 'bg-blue-500/10 text-[#2874F0]'
               }`}
             >
-              {historyItems.length} {isYT ? 'YouTube Videos' : isIG ? 'Instagram Posts' : 'Flipkart Products'}
+              {historyItems.length} {isYT ? 'YouTube Videos' : isIG ? 'Social Media Posts' : 'E-Commerce Products'}
             </span>
           </div>
 
@@ -141,7 +141,7 @@ export default function PlatformAnalyticsView({
                   }`}
                 >
                   <th className="pb-3 pr-3">
-                    {isYT ? 'YouTube Video / Short' : isIG ? 'Instagram Reel / Post' : 'Flipkart Product'}
+                    {isYT ? 'YouTube Video / Short' : isIG ? 'Social Media Post' : 'E-Commerce Product'}
                   </th>
                   <th className="pb-3 px-3">
                     {isYT ? 'Subscribers' : isIG ? 'Followers' : 'Customer Rating'}
@@ -162,7 +162,7 @@ export default function PlatformAnalyticsView({
                       colSpan={7}
                       className="py-10 text-center text-slate-400 text-xs"
                     >
-                      0 {isYT ? 'YouTube videos/shorts' : isIG ? 'Instagram posts' : 'Flipkart products'} analyzed yet. Click "+ Analyze {isYT ? 'YouTube' : isIG ? 'Instagram' : 'Flipkart'}" to paste a link!
+                      0 {isYT ? 'YouTube videos/shorts' : isIG ? 'social media posts' : 'e-commerce products'} analyzed yet. Click "+ Analyze {isYT ? 'YouTube' : isIG ? 'Social Media' : 'E-Commerce'}" to paste a link or upload CSV!
                     </td>
                   </tr>
                 ) : (
@@ -276,11 +276,11 @@ export default function PlatformAnalyticsView({
                 {isYT
                   ? 'YouTube Optimal Upload & Comment Time'
                   : isIG
-                  ? 'Instagram Optimal Reel Posting Time'
-                  : 'Flipkart Customer Review Activity & Order Peak Time'}
+                  ? 'Social Media Optimal Posting & Engagement Time'
+                  : 'E-Commerce Customer Review Activity & Order Peak Time'}
               </h3>
               <p className="text-[11px] text-slate-400">
-                Peak {isYT ? 'YouTube viewer' : isIG ? 'Instagram follower' : 'Flipkart buyer'} activity & review velocity hours
+                Peak {isYT ? 'YouTube viewer' : isIG ? 'social audience' : 'verified buyer'} activity & review velocity hours
               </p>
             </div>
             <span
@@ -343,7 +343,7 @@ export default function PlatformAnalyticsView({
                   darkMode ? 'text-white' : 'text-slate-900'
                 }`}
               >
-                Pandas {isYT ? 'YouTube' : isIG ? 'Instagram' : 'Flipkart'} Data Cleaning & Spam Removal
+                Pandas {isYT ? 'YouTube' : isIG ? 'Social Media' : 'E-Commerce'} Data Cleaning & Spam Removal
               </h3>
             </div>
             <span className="text-xs font-semibold text-emerald-600 flex items-center gap-1">

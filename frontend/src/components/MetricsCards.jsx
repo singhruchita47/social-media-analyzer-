@@ -74,7 +74,7 @@ export default function MetricsCards({
 
   const reachCards = [
     {
-      title: isYT ? 'YouTube Subscribers' : isIG ? 'Instagram Followers' : `${ecomBrand} Product Rating`,
+      title: isYT ? 'YouTube Subscribers' : isIG ? 'Social Audience / Followers' : 'Customer Star Rating',
       value: isFK ? (hasData ? '4.4★' : '0★') : formatMetricNumber(reach.total_followers),
       topBorder: 'border-t-2 border-t-indigo-500/70',
       growth: !hasData
@@ -83,17 +83,17 @@ export default function MetricsCards({
         ? (isFK ? 'Verified Product' : 'Live Channel')
         : `+${reach.followers_growth_pct}%`,
       subtitle: !hasData
-        ? `Paste a ${isYT ? 'YouTube' : isIG ? 'Instagram' : ecomBrand} link to fetch data`
+        ? `Paste a ${isYT ? 'YouTube' : isIG ? 'Social Media' : 'E-Commerce'} link to fetch data`
         : isYT
         ? 'Real YouTube channel subscribers'
         : isIG
-        ? 'Instagram business followers'
-        : `${ecomBrand} certified customer ratings`,
+        ? 'Audience & followers across social channels'
+        : 'Verified customer ratings & feedback',
       icon: Users,
       iconCircle: 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950/50 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/30',
     },
     {
-      title: isYT ? 'YouTube Engagement' : isIG ? 'Instagram Engagement' : `${ecomBrand} Customer Ratings`,
+      title: isYT ? 'YouTube Engagement' : isIG ? 'Social Engagement & Likes' : 'Customer Ratings & Reviews',
       value: formatMetricNumber(reach.total_engagement),
       topBorder: 'border-t-2 border-t-emerald-500/70',
       growth: !hasData
@@ -104,13 +104,13 @@ export default function MetricsCards({
       subtitle: !hasData
         ? '0 likes • 0 comments'
         : isFK
-        ? `${(stats?.total_engagement_likes || 0).toLocaleString()} 5-star likes • ${totalComments.toLocaleString()} reviews`
+        ? `${(stats?.total_engagement_likes || 0).toLocaleString()} 5-star ratings • ${totalComments.toLocaleString()} reviews`
         : `${(stats?.total_engagement_likes || 0).toLocaleString()} likes • ${totalComments.toLocaleString()} comments`,
       icon: Heart,
       iconCircle: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30',
     },
     {
-      title: isYT ? 'YouTube Unique Reach' : isIG ? 'Instagram Reach' : 'Product Impressions / Reach',
+      title: isYT ? 'YouTube Unique Reach' : isIG ? 'Social Media Reach' : 'Product Reach & Impressions',
       value: formatMetricNumber(reach.total_reach),
       topBorder: 'border-t-2 border-t-rose-500/70',
       growth: !hasData
@@ -120,12 +120,16 @@ export default function MetricsCards({
         : `+${reach.reach_growth_pct}%`,
       subtitle: !hasData
         ? 'No post analyzed yet'
-        : `Unique audience reached on ${isYT ? 'YouTube' : isIG ? 'Instagram' : `${ecomBrand} Store`}`,
+        : isYT
+        ? 'Unique audience reached on YouTube'
+        : isIG
+        ? 'Unique audience reached across social media'
+        : 'Unique customer audience reached across store',
       icon: Eye,
       iconCircle: 'bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400 border border-rose-100 dark:border-rose-900/30',
     },
     {
-      title: isYT ? 'YouTube Total Views' : isIG ? 'Instagram Impressions' : `${ecomBrand} Total Reviews Scraped`,
+      title: isYT ? 'YouTube Total Views' : isIG ? 'Total Views & Impressions' : 'Total Customer Reviews Scraped',
       value: formatMetricNumber(reach.total_impressions),
       topBorder: 'border-t-2 border-t-amber-500/70',
       growth: !hasData
@@ -137,7 +141,7 @@ export default function MetricsCards({
         ? 'No views fetched yet'
         : isFK
         ? 'Verified buyer reviews analyzed'
-        : `Exact ${isYT ? 'YouTube viewCount' : 'Instagram impressions'}`,
+        : `Exact ${isYT ? 'YouTube viewCount' : 'social media views & impressions'}`,
       icon: BarChart2,
       iconCircle: 'bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400 border border-amber-100 dark:border-amber-900/30',
     },
@@ -147,7 +151,7 @@ export default function MetricsCards({
   const sentimentCards = [
     {
       id: 'all',
-      headerTitle: `${isYT ? 'YouTube' : isIG ? 'Instagram' : ecomBrand} ${isFK ? 'Reviews' : 'Comments'} Analyzed`,
+      headerTitle: `${isYT ? 'YouTube' : isIG ? 'Social Media' : (ecomBrand === 'Flipkart' ? 'E-Commerce' : ecomBrand)} ${isFK ? 'Reviews' : 'Comments'} Analyzed`,
       value: totalComments.toLocaleString(),
       badge: totalComments > 0 ? '100% Cleaned' : '0 comments',
       badgeClass: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',

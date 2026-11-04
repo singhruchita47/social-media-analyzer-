@@ -68,12 +68,18 @@ export default function EngagementTrendsChart({
               darkMode ? 'text-white' : 'text-slate-900'
             }`}
           >
-            {isYT ? 'YouTube Views & Comment Trend' : 'Instagram Reach & Comment Trend'}
+            {isYT
+              ? 'YouTube Views & Comment Trend'
+              : isIG
+              ? 'Social Media Reach & Engagement Trend'
+              : 'E-Commerce Review Velocity & Ratings Trend'}
           </h3>
           <p className="text-[11px] text-slate-400">
             {isYT
               ? 'Analyzed YouTube Videos/Shorts performance'
-              : 'Analyzed Instagram Reels/Posts performance'}
+              : isIG
+              ? 'Analyzed Social Media Posts/Reels performance'
+              : 'Analyzed E-Commerce product customer review velocity'}
           </p>
         </div>
 
@@ -84,7 +90,7 @@ export default function EngagementTrendsChart({
               : 'bg-[#F8F9FC] border-slate-200/80 text-slate-600'
           }`}
         >
-          {isYT ? 'YouTube Only' : 'Instagram Only'}
+          {isYT ? 'YouTube Only' : isIG ? 'Social Media' : 'E-Commerce'}
         </span>
       </div>
 

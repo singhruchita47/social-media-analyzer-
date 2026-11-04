@@ -391,7 +391,7 @@ export default function App() {
                         isYT ? 'bg-red-500' : isIG ? 'bg-[#F469A9]' : isMyntra ? 'bg-gradient-to-r from-pink-500 to-rose-500' : 'bg-[#2874F0]'
                       }`}
                     >
-                      Live Analyzed {isYT ? 'YouTube Short / Video' : isIG ? 'Instagram Post' : `${ecomPlatformName} Product`}
+                      Live Analyzed {isYT ? 'YouTube Short / Video' : isIG ? 'Social Media Post' : `${ecomPlatformName} Product`}
                     </span>
                     <span className={`text-xs font-bold ${isYT ? 'text-red-600' : isIG ? 'text-pink-600' : isMyntra ? 'text-pink-600' : 'text-[#2874F0]'}`}>
                       {activeSingleAnalysis.author_handle}
@@ -440,7 +440,7 @@ export default function App() {
                     onClick={() => setActiveSingleAnalysis(null)}
                     className="px-3.5 py-2 rounded-full text-xs font-bold bg-white text-slate-700 border border-slate-200 hover:bg-slate-100 shadow-sm"
                   >
-                    Show All {isYT ? 'YouTube' : isIG ? 'Instagram' : 'E-Commerce'} Items
+                    Show All {isYT ? 'YouTube' : isIG ? 'Social Media' : 'E-Commerce'} Items
                   </button>
                 </div>
               </div>
@@ -480,15 +480,15 @@ export default function App() {
                       {isYT
                         ? 'YouTube Video & Shorts Reach Dashboard'
                         : isIG
-                        ? 'Social Media Platform (Instagram/Reels) Reach Dashboard'
-                        : 'E-Commerce Platform (Flipkart/Reviews) Sentiment Dashboard'}
+                        ? 'Social Media Platform Reach & AI Sentiment Dashboard'
+                        : 'E-Commerce Platform Customer Reviews & Ratings Dashboard'}
                     </h1>
                     <p className="text-xs text-slate-400 mt-0.5">
                       {isYT
                         ? 'Dedicated YouTube subscribers, real video/Shorts views, unique reach, and AI comment sentiment.'
                         : isIG
-                        ? 'Automated headless scraping of social media reach, Reel plays, and AI comment sentiment (No API Key Required).'
-                        : 'Automated scraping of verified customer reviews, 1-5★ star ratings, product issues, and AI sentiment.'}
+                        ? 'Universal automated analysis of social media reach, audience engagement, impressions, and AI comment sentiment (Zero API Required).'
+                        : 'Universal automated scraping of verified customer reviews, 1-5★ star ratings, and AI sentiment (Amazon, Myntra, Flipkart, Meesho & More).'}
                     </p>
                   </div>
                 </div>

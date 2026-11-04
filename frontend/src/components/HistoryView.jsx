@@ -36,7 +36,7 @@ export default function HistoryView({
             Analyzed Posts History (SQLite Storage)
           </h2>
           <p className="text-xs text-slate-400 mt-0.5">
-            Persistent record of all analyzed YouTube videos, Instagram posts, and Flipkart products, reach/engagement metrics, and sentiment breakdowns
+            Persistent record of all analyzed YouTube videos, Social Media posts, and E-Commerce products, reach/engagement metrics, and sentiment breakdowns
           </p>
         </div>
 
