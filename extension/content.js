@@ -178,43 +178,48 @@
     };
   }
 
-  // 4. Fetch Deep Analysis from Sociafy Backend (FastAPI / RoBERTa)
-  async function fetchBackendAnalysis(details, localFallback) {
-    try {
-      const resp = await fetch('http://localhost:8000/api/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          platform: 'flipkart',
-          post_url: details.url,
-          post_title: details.title,
-          max_comments: 50,
-          force_sandbox: false,
-        }),
-      });
-
-      if (resp.ok) {
-        const data = await resp.json();
-        console.log('[Sociafy AI] Live RoBERTa Backend Analysis Received:', data);
-        const bd = data.sentiment_breakdown || {};
-        return {
-          totalAnalyzed: data.total_comments_analyzed || localFallback.totalAnalyzed,
-          posPct: Math.round(bd.primary_positive_pct || localFallback.posPct),
-          negPct: Math.round(bd.primary_negative_pct || localFallback.negPct),
-          neuPct: Math.round(bd.primary_neutral_pct || localFallback.neuPct),
-          posCount: bd.positive_count || localFallback.posCount,
-          negCount: bd.negative_count || localFallback.negCount,
-          neuCount: bd.neutral_count || localFallback.neuCount,
-          deliveryIssues: data.pain_points_detected?.delivery_issues || localFallback.deliveryIssues,
-          priceIssues: data.pain_points_detected?.price_concerns || localFallback.priceIssues,
-          qualityIssues: data.pain_points_detected?.quality_defects || localFallback.qualityIssues,
-          reviews: localFallback.reviews,
-        };
+  // 4. Fetch Deep Analysis via Background Service Worker (Bypasses HTTPS Mixed Content & CORS)
+  function fetchBackendAnalysis(details, localFallback) {
+    return new Promise((resolve) => {
+      try {
+        chrome.runtime.sendMessage(
+          {
+            action: 'ANALYZE_POST',
+            payload: {
+              platform: 'flipkart',
+              post_url: details.url,
+              post_title: details.title,
+              max_comments: 50,
+              force_sandbox: false,
+            },
+          },
+          (res) => {
+            const err = chrome.runtime.lastError;
+            if (err || !res || !res.success) {
+              resolve(localFallback);
+              return;
+            }
+            const data = res.data;
+            const bd = data.sentiment_breakdown || {};
+            resolve({
+              totalAnalyzed: data.total_comments_analyzed || localFallback.totalAnalyzed,
+              posPct: Math.round(bd.primary_positive_pct || localFallback.posPct),
+              negPct: Math.round(bd.primary_negative_pct || localFallback.negPct),
+              neuPct: Math.round(bd.primary_neutral_pct || localFallback.neuPct),
+              posCount: bd.positive_count || localFallback.posCount,
+              negCount: bd.negative_count || localFallback.negCount,
+              neuCount: bd.neutral_count || localFallback.neuCount,
+              deliveryIssues: data.pain_points_detected?.delivery_issues || localFallback.deliveryIssues,
+              priceIssues: data.pain_points_detected?.price_concerns || localFallback.priceIssues,
+              qualityIssues: data.pain_points_detected?.quality_defects || localFallback.qualityIssues,
+              reviews: localFallback.reviews,
+            });
+          }
+        );
+      } catch (err) {
+        resolve(localFallback);
       }
-    } catch (err) {
-      console.warn('[Sociafy AI] Local backend not responding or offline, using Instant On-Page Analysis.');
-    }
-    return localFallback;
+    });
   }
 
   // 5. Inject Floating Trigger Pill
