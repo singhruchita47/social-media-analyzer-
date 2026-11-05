@@ -17,7 +17,6 @@ import {
 const MAIN_MENU = [
   { id: 'dashboard', label: 'Reach & Dashboard', fkLabel: 'Reviews & Rating', icon: BarChart3 },
   { id: 'insights', label: 'Comments Analysis', fkLabel: 'Review Analysis', icon: MessageSquareHeart, badge: 'AI' },
-  { id: 'platforms', label: 'Post Reach Breakdown', fkLabel: 'Product Comparison', icon: LayoutGrid },
   { id: 'sentiment', label: 'Sentiment Overview', fkLabel: 'Customer Sentiment', icon: Sparkles },
   { id: 'history', label: 'Analyzed History', fkLabel: 'Analyzed Products', icon: History },
 ];

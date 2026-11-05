@@ -726,31 +726,7 @@ export default function App() {
           )}
 
           {/* ============================================================== */}
-          {/* TAB 3: POST REACH BREAKDOWN                                    */}
-          {/* ============================================================== */}
-          {activeTab === 'platforms' && (
-            <>
-              <MetricsCards
-                stats={activeViewStats}
-                selectedPlatform={selectedPlatform}
-                isLiveSinglePost={Boolean(activeSingleAnalysis)}
-                darkMode={darkMode}
-                showReachRow={true}
-                showSentimentRow={false}
-              />
-              <PlatformAnalyticsView
-                stats={activeViewStats}
-                selectedPlatform={selectedPlatform}
-                historyItems={historyItems}
-                onSelectPostForComments={handleSelectPostById}
-                darkMode={darkMode}
-                compact={false}
-              />
-            </>
-          )}
-
-          {/* ============================================================== */}
-          {/* TAB 4: POST HISTORY                                            */}
+          {/* TAB 3: POST HISTORY                                            */}
           {/* ============================================================== */}
           {activeTab === 'history' && (
             <HistoryView

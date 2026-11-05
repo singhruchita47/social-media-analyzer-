@@ -39,13 +39,13 @@ export default function TopBar({
           : 'bg-white/95 border-slate-200/70 backdrop-blur-md'
       }`}
     >
-      {/* Left: Sidebar Toggle Button (Compact) */}
+      {/* Left: Sidebar Toggle Button (Icon Only) */}
       <div className="flex items-center gap-2">
         {onToggleSidebar && (
           <button
             onClick={onToggleSidebar}
-            title={sidebarOpen ? 'Hide Sidebar (साइडबार हटाएं)' : 'Show Sidebar (साइडबार दिखाएं)'}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-bold border shrink-0 transition ${
+            title={sidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'}
+            className={`p-2 rounded-xl border shrink-0 transition ${
               !sidebarOpen
                 ? isYT
                   ? 'bg-red-600 text-white border-red-600 shadow-sm hover:bg-red-700'
@@ -58,26 +58,20 @@ export default function TopBar({
             }`}
           >
             {sidebarOpen ? (
-              <>
-                <PanelLeftClose
-                  className={`w-3.5 h-3.5 ${
-                    isYT ? 'text-red-500' : isIG ? 'text-pink-500' : 'text-blue-500'
-                  }`}
-                />
-                <span className="hidden sm:inline">Hide Sidebar</span>
-              </>
+              <PanelLeftClose
+                className={`w-4 h-4 ${
+                  isYT ? 'text-red-500' : isIG ? 'text-pink-500' : 'text-blue-500'
+                }`}
+              />
             ) : (
-              <>
-                <PanelLeftOpen className="w-3.5 h-3.5" />
-                <span>Show Sidebar</span>
-              </>
+              <PanelLeftOpen className="w-4 h-4" />
             )}
           </button>
         )}
       </div>
 
       {/* Right Controls: YouTube vs Social Media Platform vs E-Commerce Platform */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2.5">
         <div
           className={`flex items-center p-1 rounded-full border ${
             darkMode
@@ -123,37 +117,33 @@ export default function TopBar({
           </button>
         </div>
 
+        {/* Icon-Only Action Buttons */}
         <button
           onClick={onExportPDF}
-          title="Download Professional PDF Report with Charts & Product/Creator Info"
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold border border-slate-200/90 text-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200 dark:hover:bg-slate-800 transition shadow-sm"
+          title="Export PDF Report"
+          className="p-2.5 rounded-full border border-slate-200/90 text-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200 dark:hover:bg-slate-800 transition shadow-sm"
         >
-          <FileText className="w-3.5 h-3.5 text-orange-500" />
-          <span className="hidden sm:inline">Export PDF</span>
-          <span className="sm:hidden">PDF</span>
+          <FileText className="w-4 h-4 text-orange-500" />
         </button>
 
         <button
           onClick={onExportCSV}
           title="Export Analyzed Comments CSV"
-          className={`hidden md:flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-semibold border transition ${
+          className={`p-2.5 rounded-full border transition ${
             darkMode
               ? 'bg-slate-950 border-slate-800 text-slate-300 hover:bg-slate-800'
               : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 shadow-sm'
           }`}
         >
-          <Download className="w-3.5 h-3.5 text-slate-500" />
-          Export CSV
+          <Download className="w-4 h-4 text-slate-500 dark:text-slate-400" />
         </button>
 
         <button
           onClick={onOpenExtensionModal}
-          title="Install Chrome Extension for Direct In-Page Analysis on Amazon/Flipkart/Myntra"
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold border border-purple-200/90 text-purple-700 bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/40 dark:border-purple-800 dark:text-purple-300 dark:hover:bg-purple-900/50 transition shadow-sm"
+          title="Chrome Extension"
+          className="p-2.5 rounded-full border border-purple-200/90 text-purple-700 bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/40 dark:border-purple-800 dark:text-purple-300 dark:hover:bg-purple-900/50 transition shadow-sm"
         >
-          <Puzzle className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-          <span className="hidden sm:inline">Chrome Extension</span>
-          <span className="sm:hidden">Extension</span>
+          <Puzzle className="w-4 h-4 text-purple-600 dark:text-purple-400" />
         </button>
 
         <button
