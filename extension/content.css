@@ -144,6 +144,32 @@
   gap: 16px !important;
 }
 
+/* Auto-Detected Link Box */
+.sociafy-autodetect-box {
+  background: #f1f5f9 !important;
+  border: 1px dashed #cbd5e1 !important;
+  border-radius: 8px !important;
+  padding: 8px 10px !important;
+  font-size: 11px !important;
+  color: #475569 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  overflow: hidden !important;
+}
+
+.sociafy-autodetect-pill {
+  font-size: 9.5px !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+  background: #10b981 !important;
+  color: #ffffff !important;
+  white-space: nowrap !important;
+  letter-spacing: 0.4px !important;
+}
+
 /* Product Info Box */
 .sociafy-product-card {
   background: #f8fafc !important;

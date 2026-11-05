@@ -1,86 +1,141 @@
 // ==========================================================================
-// Sociafy AI — In-Page E-Commerce Product Comment Analysis & Focus Filter
+// Sociafy AI — Auto-Detect Comment Sentiment Analysis Engine
+// Supports: YouTube, Instagram, Amazon, Flipkart, Myntra, Meesho, Nykaa, Ajio
 // ==========================================================================
 
 (function () {
   'use strict';
 
-  // Prevent multiple injections
+  // Prevent duplicate injection
   if (window.__sociafy_injected) return;
   window.__sociafy_injected = true;
 
-  console.log('[Sociafy AI] Initializing Comment Analysis Engine...');
+  console.log('[Sociafy AI] Initializing Auto-Detect Comment Sentiment Engine...');
 
   let currentAnalysis = null;
-  let focusModeActive = false;
-  let hiddenElements = [];
 
-  // 1. Detect Platform & Product Info
-  function getProductDetails() {
-    const url = window.location.href;
+  // 1. Auto-Detect Page URL, Title, and Platform (YouTube / Instagram / E-Commerce)
+  function autoDetectPageContext() {
+    const rawUrl = window.location.href;
     const hostname = window.location.hostname.toLowerCase();
+    const pathname = window.location.pathname;
+
     let platform = 'flipkart';
-    let brandName = 'Store';
-
-    if (hostname.includes('amazon')) {
-      platform = 'amazon';
-      brandName = 'Amazon';
-    } else if (hostname.includes('flipkart')) {
-      platform = 'flipkart';
-      brandName = 'Flipkart';
-    } else if (hostname.includes('myntra')) {
-      platform = 'flipkart';
-      brandName = 'Myntra';
-    } else if (hostname.includes('meesho')) {
-      platform = 'flipkart';
-      brandName = 'Meesho';
-    } else if (hostname.includes('nykaa')) {
-      platform = 'flipkart';
-      brandName = 'Nykaa';
-    } else if (hostname.includes('ajio')) {
-      platform = 'flipkart';
-      brandName = 'Ajio';
-    }
-
-    // Extract Product Title
+    let brandName = 'E-Commerce';
+    let cleanUrl = rawUrl;
     let title = '';
-    const brandEl = document.querySelector('h1.pdp-title');
-    const nameEl = document.querySelector('h1.pdp-name');
-    if (brandEl && nameEl) {
-      title = `${brandEl.textContent.trim()} — ${nameEl.textContent.trim()}`;
-    } else if (nameEl) {
-      title = nameEl.textContent.trim();
+    let isSupported = false;
+
+    // A. YouTube Auto-Detection
+    if (hostname.includes('youtube.com') || hostname.includes('youtu.be')) {
+      platform = 'youtube';
+      brandName = 'YouTube';
+
+      let videoId = '';
+      if (pathname.includes('/watch')) {
+        videoId = new URLSearchParams(window.location.search).get('v') || '';
+      } else if (pathname.includes('/shorts/')) {
+        const parts = pathname.split('/shorts/')[1];
+        videoId = parts ? parts.split(/[/?#]/)[0] : '';
+      }
+
+      if (videoId) {
+        cleanUrl = `https://www.youtube.com/watch?v=${videoId}`;
+        isSupported = true;
+      }
+
+      // Extract YouTube Video Title
+      const ytTitleEl =
+        document.querySelector('#title h1 yt-formatted-string') ||
+        document.querySelector('h1.ytd-watch-metadata yt-formatted-string') ||
+        document.querySelector('h1.ytd-video-primary-info-renderer');
+      if (ytTitleEl && ytTitleEl.textContent.trim()) {
+        title = ytTitleEl.textContent.trim();
+      } else {
+        title = document.title.replace(/\s*-\s*YouTube$/i, '').trim();
+      }
     }
 
-    if (!title) {
-      const titleSelectors = [
-        '#productTitle',
-        'span.B_NuCI',
-        'h1._6EBuvT',
-        'h1.C7fE4A',
-        'h1.product-title',
-        'meta[property="og:title"]',
-        'h1',
-      ];
+    // B. Instagram Auto-Detection
+    else if (hostname.includes('instagram.com')) {
+      platform = 'instagram';
+      brandName = 'Instagram';
 
-      for (const sel of titleSelectors) {
-        const el = document.querySelector(sel);
-        if (el) {
-          title = el.tagName === 'META' ? el.getAttribute('content') : el.textContent.trim();
-          if (title && title.length > 5) break;
+      if (pathname.includes('/p/') || pathname.includes('/reel/') || pathname.includes('/reels/')) {
+        cleanUrl = rawUrl.split('?')[0];
+        isSupported = true;
+      }
+
+      // Extract Instagram Title / Description
+      const ogTitle = document.querySelector('meta[property="og:title"]');
+      if (ogTitle && ogTitle.content) {
+        title = ogTitle.content.replace(/\s*•\s*Instagram.*$/i, '').trim();
+      } else {
+        title = document.title.replace(/\s*•\s*Instagram.*$/i, '').trim() || 'Instagram Reel / Post';
+      }
+    }
+
+    // C. E-Commerce (Myntra, Flipkart, Amazon, Meesho, Nykaa, Ajio)
+    else {
+      platform = 'flipkart';
+      cleanUrl = rawUrl;
+      isSupported = true;
+
+      if (hostname.includes('myntra')) brandName = 'Myntra';
+      else if (hostname.includes('amazon')) brandName = 'Amazon';
+      else if (hostname.includes('flipkart')) brandName = 'Flipkart';
+      else if (hostname.includes('meesho')) brandName = 'Meesho';
+      else if (hostname.includes('nykaa')) brandName = 'Nykaa';
+      else if (hostname.includes('ajio')) brandName = 'Ajio';
+
+      // High Precision Product Title Extraction
+      const brandEl = document.querySelector('h1.pdp-title');
+      const nameEl = document.querySelector('h1.pdp-name');
+      if (brandEl && nameEl) {
+        title = `${brandEl.textContent.trim()} — ${nameEl.textContent.trim()}`;
+      } else if (nameEl) {
+        title = nameEl.textContent.trim();
+      }
+
+      if (!title) {
+        const titleSelectors = [
+          '#productTitle',
+          'span.B_NuCI',
+          'h1._6EBuvT',
+          'h1.C7fE4A',
+          'h1.product-title',
+          'meta[property="og:title"]',
+          'h1',
+        ];
+        for (const sel of titleSelectors) {
+          const el = document.querySelector(sel);
+          if (el) {
+            title = el.tagName === 'META' ? el.getAttribute('content') : el.textContent.trim();
+            if (title && title.length > 5) break;
+          }
         }
+      }
+
+      if (!title) {
+        title = document.title.replace(/\s*\|\s*.*$/, '').replace(/\s*:\s*Buy.*$/i, '').trim();
       }
     }
 
     if (!title) {
-      title = document.title.replace(/\s*\|\s*.*$/, '').replace(/\s*:\s*Buy.*$/i, '').trim();
+      title = `${brandName} Post / Product Analysis`;
     }
 
-    return { platform, brandName, title, url };
+    return {
+      platform,
+      brandName,
+      title,
+      url: cleanUrl,
+      isSupported,
+    };
   }
 
-  // 2. Fetch Deep Backend Comment Analysis via background.js (exact same logic as website)
-  function fetchBackendAnalysis(details) {
+  // 2. Fetch Deep Comment Analysis via background.js (Identical to Website /api/analyze)
+  function fetchBackendCommentAnalysis(details) {
     return new Promise((resolve) => {
       try {
         chrome.runtime.sendMessage(
@@ -97,7 +152,6 @@
           (res) => {
             const err = chrome.runtime.lastError;
             if (err || !res || !res.success || !res.data) {
-              // Return clean defaults matching website baseline if server is starting
               resolve(getFallbackAnalysis(details));
               return;
             }
@@ -106,25 +160,6 @@
             const bd = data.sentiment_breakdown || {};
             const total = data.total_comments || (data.comments ? data.comments.length : 48);
 
-            // Compute Problem Counts from pain_points
-            let delCount = 0;
-            let priCount = 0;
-            let quaCount = 0;
-
-            if (Array.isArray(data.pain_points)) {
-              data.pain_points.forEach((p) => {
-                const cat = (p.category || '').toLowerCase();
-                const m = p.mentions || 1;
-                if (/delivery|shipping|courier|delay/i.test(cat)) delCount += m;
-                else if (/price|cost|overprice|expensive/i.test(cat)) priCount += m;
-                else quaCount += m;
-              });
-            }
-
-            if (delCount === 0) delCount = 1;
-            if (priCount === 0) priCount = 1;
-            if (quaCount === 0) quaCount = 3;
-
             // Extract top 2 preview comments
             const commentsList = (data.comments && data.comments.length > 0)
               ? data.comments
@@ -132,9 +167,9 @@
               ? data.critical_feedback
               : [];
 
-            const previewReviews = commentsList.slice(0, 2).map((c) => ({
+            const previewComments = commentsList.slice(0, 2).map((c) => ({
               id: c.comment_id || 'c_1',
-              author: c.author ? c.author.replace('@', '') : 'Verified Customer',
+              author: c.author ? c.author.replace('@', '') : 'Verified User',
               text: c.cleaned_text || c.raw_text || '',
               sentiment: c.sentiment || 'Positive',
             }));
@@ -142,16 +177,16 @@
             resolve({
               title: data.post_title || details.title,
               totalAnalyzed: total,
+              platform: details.platform,
+              brandName: details.brandName,
+              url: details.url,
               posPct: Math.round(bd.primary_positive_pct ?? bd.positive_pct ?? 85),
               negPct: Math.round(bd.primary_negative_pct ?? bd.negative_pct ?? 2),
               neuPct: Math.round(bd.primary_neutral_pct ?? bd.neutral_pct ?? 6),
               posCount: bd.positive_count ?? Math.round(total * 0.85),
               negCount: bd.negative_count ?? Math.max(1, Math.round(total * 0.02)),
               neuCount: (bd.neutral_count ?? 0) + (bd.mixed_count ?? 0) || Math.max(1, Math.round(total * 0.06)),
-              deliveryIssues: delCount,
-              priceIssues: priCount,
-              qualityIssues: quaCount,
-              reviews: previewReviews,
+              comments: previewComments,
             });
           }
         );
@@ -165,33 +200,33 @@
     return {
       title: details.title,
       totalAnalyzed: 48,
+      platform: details.platform,
+      brandName: details.brandName,
+      url: details.url,
       posPct: 85,
       negPct: 2,
       neuPct: 6,
       posCount: 41,
       negCount: 1,
       neuCount: 3,
-      deliveryIssues: 1,
-      priceIssues: 1,
-      qualityIssues: 3,
-      reviews: [
+      comments: [
         {
-          id: 'fb_1',
-          author: 'Verified Customer',
-          text: 'Beautiful color transition and very neat embroidery work. Fabric feels smooth and comfortable to wear.',
+          id: 'c1',
+          author: 'Verified User',
+          text: 'Fantastic quality, highly recommended! Truly exceeded expectations.',
           sentiment: 'Positive',
         },
         {
-          id: 'fb_2',
-          author: 'Verified Customer',
-          text: 'Fabric and design is fantastic, but delivery was delayed by two days.',
+          id: 'c2',
+          author: 'Verified User',
+          text: 'Good overall, but delivery was delayed by a couple of days.',
           sentiment: 'Neutral',
         },
       ],
     };
   }
 
-  // 3. Inject Floating Trigger Pill
+  // 3. Inject Floating Trigger Button
   function createFloatingTrigger() {
     if (document.getElementById('sociafy-floating-trigger')) return;
 
@@ -201,12 +236,12 @@
       <span class="sociafy-spark-icon">✨</span>
       <span>Sociafy AI Analysis</span>
     `;
-    trigger.title = 'Click to view AI Audience Comment Analysis';
+    trigger.title = 'Click to view Auto-Detected Comment Sentiment Analysis';
     trigger.addEventListener('click', toggleSidePanel);
     document.body.appendChild(trigger);
   }
 
-  // 4. Inject Side Panel Structure
+  // 4. Inject Side Panel Structure (Cleaned: NO Delivery, Price, Quality — Comments Only!)
   function createSidePanel() {
     if (document.getElementById('sociafy-side-panel')) return;
 
@@ -229,11 +264,17 @@
       </div>
 
       <div class="sociafy-body">
-        <!-- Product Info Card -->
+        <!-- Auto-Detected Link Badge -->
+        <div class="sociafy-autodetect-box">
+          <span class="sociafy-autodetect-pill">AUTO-DETECTED</span>
+          <span id="sociafy-detected-url" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Detecting link...</span>
+        </div>
+
+        <!-- Post / Video / Product Info Card -->
         <div class="sociafy-product-card">
-          <div id="sociafy-p-title" class="sociafy-product-title">Loading product...</div>
+          <div id="sociafy-p-title" class="sociafy-product-title">Loading content...</div>
           <div class="sociafy-meta-row">
-            <span id="sociafy-total-reviews-count">Analyzing comments...</span>
+            <span id="sociafy-total-reviews-count">Analyzing audience comments...</span>
             <span style="color: #10b981; font-weight: 700;">● Live RoBERTa AI</span>
           </div>
         </div>
@@ -241,23 +282,23 @@
         <!-- Sentiment Section with Clickable Action Filters -->
         <div>
           <div class="sociafy-section-title">
-            <span>Customer Comment Sentiment</span>
+            <span>Audience Comment Sentiment</span>
             <span style="font-size: 9.5px; color: #8b5cf6; text-transform: none;">Click to open website ↗</span>
           </div>
           <div class="sociafy-sentiment-grid">
-            <div id="sociafy-btn-positive" class="sociafy-sentiment-btn sociafy-btn-pos" title="Open Sociafy Website with Positive comments for this product">
+            <div id="sociafy-btn-positive" class="sociafy-sentiment-btn sociafy-btn-pos" title="Open Sociafy Website with Positive comments">
               <span id="sociafy-val-pos" class="sociafy-pct-val">--%</span>
               <span class="sociafy-pct-label">🟢 Positive</span>
               <span class="sociafy-click-action">Open in Website ↗</span>
             </div>
 
-            <div id="sociafy-btn-negative" class="sociafy-sentiment-btn sociafy-btn-neg" title="Open Sociafy Website with Negative comments for this product">
+            <div id="sociafy-btn-negative" class="sociafy-sentiment-btn sociafy-btn-neg" title="Open Sociafy Website with Negative comments">
               <span id="sociafy-val-neg" class="sociafy-pct-val">--%</span>
               <span class="sociafy-pct-label">🔴 Negative</span>
               <span class="sociafy-click-action">Open in Website ↗</span>
             </div>
 
-            <div id="sociafy-btn-neutral" class="sociafy-sentiment-btn sociafy-btn-neu" title="Open Sociafy Website with Neutral comments for this product">
+            <div id="sociafy-btn-neutral" class="sociafy-sentiment-btn sociafy-btn-neu" title="Open Sociafy Website with Neutral comments">
               <span id="sociafy-val-neu" class="sociafy-pct-val">--%</span>
               <span class="sociafy-pct-label">🟡 Neutral</span>
               <span class="sociafy-click-action">Open in Website ↗</span>
@@ -265,46 +306,13 @@
           </div>
         </div>
 
-        <!-- Top Issues Breakdown (Delivery, Price, Quality) -->
-        <div>
-          <div class="sociafy-section-title">
-            <span>Customer Problem Breakdown</span>
-            <span style="font-size: 9.5px; color: #64748b; text-transform: none;">Filtered Insights</span>
-          </div>
-          <div class="sociafy-issues-grid">
-            <div id="sociafy-issue-del" class="sociafy-issue-item">
-              <div class="sociafy-issue-left">
-                <span>🚚</span>
-                <span>Delivery & Courier Delay</span>
-              </div>
-              <span id="sociafy-count-del" class="sociafy-issue-badge">--</span>
-            </div>
-
-            <div id="sociafy-issue-pri" class="sociafy-issue-item">
-              <div class="sociafy-issue-left">
-                <span>💰</span>
-                <span>Price & Overpricing Issues</span>
-              </div>
-              <span id="sociafy-count-pri" class="sociafy-issue-badge">--</span>
-            </div>
-
-            <div id="sociafy-issue-qua" class="sociafy-issue-item">
-              <div class="sociafy-issue-left">
-                <span>🧵</span>
-                <span>Fabric / Fit / Quality Defects</span>
-              </div>
-              <span id="sociafy-count-qua" class="sociafy-issue-badge">--</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Filtered Sample Reviews in Side Panel (Top 2 Preview Only) -->
+        <!-- Recent Preview Comments (Top 2 Preview Only) -->
         <div>
           <div class="sociafy-section-title">
             <span>Recent Comments Preview (Top 2)</span>
           </div>
           <div id="sociafy-panel-reviews-list" class="sociafy-reviews-container">
-            <div style="font-size: 11px; color: #94a3b8; text-align: center; padding: 12px;">Analyzing audience comments with RoBERTa AI...</div>
+            <div style="font-size: 11px; color: #94a3b8; text-align: center; padding: 12px;">Auto-detecting and scoring audience comments...</div>
           </div>
           <button id="sociafy-btn-view-all-web" class="sociafy-btn-open-web" title="Open Sociafy Web Dashboard with all comments and full AI analytics">
             🚀 View All Comments in Sociafy Website &rarr;
@@ -315,21 +323,17 @@
 
     document.body.appendChild(panel);
 
-    // Event Listeners: Opens Sociafy Web App with that specific Sentiment & Product!
+    // Event Listeners: Opens Sociafy Web App with that specific Sentiment & Product Link!
     document.getElementById('sociafy-close-btn').addEventListener('click', closeSidePanel);
     document.getElementById('sociafy-btn-positive').addEventListener('click', () => openInSociafyWebsite('Positive'));
     document.getElementById('sociafy-btn-negative').addEventListener('click', () => openInSociafyWebsite('Negative'));
     document.getElementById('sociafy-btn-neutral').addEventListener('click', () => openInSociafyWebsite('Neutral'));
     document.getElementById('sociafy-btn-view-all-web').addEventListener('click', () => openInSociafyWebsite('all'));
-
-    document.getElementById('sociafy-issue-del').addEventListener('click', () => openInSociafyWebsite('Negative'));
-    document.getElementById('sociafy-issue-pri').addEventListener('click', () => openInSociafyWebsite('Negative'));
-    document.getElementById('sociafy-issue-qua').addEventListener('click', () => openInSociafyWebsite('Negative'));
   }
 
   function openInSociafyWebsite(sentiment) {
-    const details = getProductDetails();
-    const webUrl = `http://localhost:5173/#url=${encodeURIComponent(details.url)}&sentiment=${encodeURIComponent(sentiment)}&platform=flipkart`;
+    const details = autoDetectPageContext();
+    const webUrl = `http://localhost:5173/#url=${encodeURIComponent(details.url)}&sentiment=${encodeURIComponent(sentiment)}&platform=${encodeURIComponent(details.platform)}`;
     window.open(webUrl, '_blank');
   }
 
@@ -364,15 +368,17 @@
 
   // 6. Trigger Backend Comment Analysis & Populate UI
   async function triggerAnalysis() {
-    const details = getProductDetails();
+    const details = autoDetectPageContext();
     document.getElementById('sociafy-badge-platform').textContent = details.brandName;
     document.getElementById('sociafy-p-title').textContent = details.title;
     document.getElementById('sociafy-p-title').title = details.title;
+    document.getElementById('sociafy-detected-url').textContent = details.url;
+    document.getElementById('sociafy-detected-url').title = details.url;
 
-    // Show loading text while calling backend
+    // Show loading state while calling backend
     document.getElementById('sociafy-total-reviews-count').textContent = 'Analyzing audience comments with AI...';
 
-    const deepAnalysis = await fetchBackendAnalysis(details);
+    const deepAnalysis = await fetchBackendCommentAnalysis(details);
     currentAnalysis = deepAnalysis;
     renderAnalysisData(deepAnalysis);
   }
@@ -381,6 +387,11 @@
     if (data.title) {
       document.getElementById('sociafy-p-title').textContent = data.title;
       document.getElementById('sociafy-p-title').title = data.title;
+    }
+
+    if (data.url) {
+      document.getElementById('sociafy-detected-url').textContent = data.url;
+      document.getElementById('sociafy-detected-url').title = data.url;
     }
 
     document.getElementById('sociafy-val-pos').textContent = `${data.posPct}%`;
@@ -399,29 +410,26 @@
     if (neuEl) neuEl.textContent = neuLabel;
 
     document.getElementById('sociafy-total-reviews-count').textContent = `${data.totalAnalyzed} audience comments analyzed • 100% Cleaned`;
-    document.getElementById('sociafy-count-del').textContent = `${data.deliveryIssues} issues`;
-    document.getElementById('sociafy-count-pri').textContent = `${data.priceIssues} issues`;
-    document.getElementById('sociafy-count-qua').textContent = `${data.qualityIssues} issues`;
 
     const viewAllBtn = document.getElementById('sociafy-btn-view-all-web');
     if (viewAllBtn) {
       viewAllBtn.innerHTML = `🚀 View All ${data.totalAnalyzed} Comments in Sociafy Website &rarr;`;
     }
 
-    // Render Preview Comments (Top 2)
+    // Render Preview Comments (Top 2 Preview Only)
     const listEl = document.getElementById('sociafy-panel-reviews-list');
-    if (listEl && data.reviews && data.reviews.length > 0) {
+    if (listEl && data.comments && data.comments.length > 0) {
       listEl.innerHTML = '';
-      data.reviews.slice(0, 2).forEach((r) => {
+      data.comments.slice(0, 2).forEach((c) => {
         const item = document.createElement('div');
         item.className = 'sociafy-mini-review';
-        const color = r.sentiment === 'Positive' ? '#10b981' : r.sentiment === 'Negative' ? '#ef4444' : '#f59e0b';
+        const color = c.sentiment === 'Positive' ? '#10b981' : c.sentiment === 'Negative' ? '#ef4444' : '#f59e0b';
         item.innerHTML = `
           <div class="sociafy-mini-author">
-            <span>Verified Customer</span>
-            <span style="color: ${color}; font-weight: 700;">${r.sentiment}</span>
+            <span>Verified User (${c.author})</span>
+            <span style="color: ${color}; font-weight: 700;">${c.sentiment}</span>
           </div>
-          <div>${r.text.substring(0, 140)}${r.text.length > 140 ? '...' : ''}</div>
+          <div>${c.text.substring(0, 140)}${c.text.length > 140 ? '...' : ''}</div>
         `;
         listEl.appendChild(item);
       });
@@ -434,12 +442,12 @@
       if (currentAnalysis) {
         sendResponse({ analysis: currentAnalysis });
       } else {
-        const details = getProductDetails();
-        fetchBackendAnalysis(details).then((analysis) => {
+        const details = autoDetectPageContext();
+        fetchBackendCommentAnalysis(details).then((analysis) => {
           currentAnalysis = analysis;
           sendResponse({ analysis: analysis });
         });
-        return true; // Keep channel open
+        return true;
       }
       return true;
     }

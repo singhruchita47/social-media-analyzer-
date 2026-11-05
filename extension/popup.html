@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sociafy AI</title>
+  <title>Sociafy AI Auto-Detect</title>
   <style>
     body {
       width: 360px;
@@ -53,9 +53,39 @@
       border-radius: 9999px;
     }
 
-    /* Product Card */
+    /* Auto-Detected Link Box */
+    .autodetect-row {
+      margin-top: 10px;
+      background: #1e293b;
+      border: 1px dashed #475569;
+      border-radius: 8px;
+      padding: 6px 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 10.5px;
+      color: #94a3b8;
+      overflow: hidden;
+    }
+    .autodetect-tag {
+      font-size: 8.5px;
+      font-weight: 800;
+      background: #10b981;
+      color: #ffffff;
+      padding: 2px 5px;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+    .autodetect-url {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: #cbd5e1;
+    }
+
+    /* Product / Video Card */
     .product-box {
-      margin-top: 12px;
+      margin-top: 10px;
       background: #1e293b;
       border: 1px solid #334155;
       border-radius: 10px;
@@ -72,7 +102,7 @@
     .product-sub {
       font-size: 10.5px;
       color: #94a3b8;
-      margin-top: 3px;
+      margin-top: 4px;
       display: flex;
       justify-content: space-between;
     }
@@ -123,7 +153,7 @@
       color: #fbbf24;
     }
     .sent-pct {
-      font-size: 19px;
+      font-size: 20px;
       font-weight: 800;
       display: block;
     }
@@ -141,46 +171,45 @@
       text-decoration: underline;
     }
 
-    /* Problem breakdown */
-    .issues-list {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      margin-top: 6px;
-    }
-    .issue-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+    /* Recent Comments Preview */
+    .comments-preview-box {
+      margin-top: 12px;
       background: #1e293b;
       border: 1px solid #334155;
-      padding: 8px 10px;
-      border-radius: 8px;
-      font-size: 11.5px;
-      cursor: pointer;
-      transition: background 0.15s;
+      border-radius: 10px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
-    .issue-row:hover {
-      background: #273549;
+    .mini-comment {
+      font-size: 11px;
+      color: #cbd5e1;
+      line-height: 1.35;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #334155;
     }
-    .badge-issue {
-      background: #7f1d1d;
-      color: #fecaca;
+    .mini-comment:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+    .mini-comment-header {
       font-size: 10px;
       font-weight: 700;
-      padding: 2px 6px;
-      border-radius: 9999px;
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 3px;
     }
 
     /* Actions */
     .btn-row {
       display: flex;
       gap: 8px;
-      margin-top: 14px;
+      margin-top: 12px;
     }
     .btn-focus {
       flex: 1;
-      padding: 9px;
+      padding: 10px;
       border-radius: 8px;
       font-size: 11.5px;
       font-weight: 700;
@@ -195,7 +224,7 @@
       opacity: 0.92;
     }
     .btn-reset {
-      padding: 9px 12px;
+      padding: 10px 12px;
       border-radius: 8px;
       font-size: 11px;
       font-weight: 700;
@@ -215,71 +244,65 @@
     <div class="brand-left">
       <div class="logo-badge">✨</div>
       <div>
-        <div class="title">Sociafy AI Analysis</div>
-        <div style="font-size: 10px; color: #94a3b8;">Instant E-Commerce Sentiment</div>
+        <div class="title">Sociafy AI Auto-Detect</div>
+        <div style="font-size: 10px; color: #94a3b8;">YouTube • Social Media • E-Commerce</div>
       </div>
     </div>
-    <span class="badge-live">● Live NLP</span>
+    <span class="badge-live">● Live AI</span>
   </div>
 
-  <!-- Detected Product Card -->
+  <!-- Auto-Detected Link Box -->
+  <div class="autodetect-row">
+    <span class="autodetect-tag">AUTO-DETECTED</span>
+    <span id="pop-detected-url" class="autodetect-url">Detecting page link...</span>
+  </div>
+
+  <!-- Detected Post / Video / Product Card -->
   <div class="product-box">
-    <div id="pop-title" class="product-name">Detecting product...</div>
+    <div id="pop-title" class="product-name">Detecting active tab...</div>
     <div class="product-sub">
       <span id="pop-platform">Platform: Detecting...</span>
-      <span id="pop-total-reviews">-- reviews</span>
+      <span id="pop-total-reviews">-- comments</span>
     </div>
   </div>
 
-  <!-- 3 Sentiments: Positive, Negative, Neutral (Clickable to Filter on Page) -->
+  <!-- 3 Sentiments: Positive, Negative, Neutral (Clickable to Open Website Pre-Filtered) -->
   <div class="section-label">
-    <span>Customer Sentiment %</span>
-    <span style="color: #c084fc; font-size: 9px; text-transform: none;">Click to view in page 🎯</span>
+    <span>Audience Comment Sentiment %</span>
+    <span style="color: #c084fc; font-size: 9px; text-transform: none;">Click to open website ↗</span>
   </div>
   <div class="sentiment-grid">
-    <div id="pop-btn-pos" class="sent-card sent-pos" title="Open Sociafy Website with Positive reviews for this product">
+    <div id="pop-btn-pos" class="sent-card sent-pos" title="Open Sociafy Website with Positive comments">
       <span id="pop-val-pos" class="sent-pct">--%</span>
       <span class="sent-title">🟢 Positive</span>
       <span class="sent-sub">Open in Website ↗</span>
     </div>
 
-    <div id="pop-btn-neg" class="sent-card sent-neg" title="Open Sociafy Website with Negative reviews for this product">
+    <div id="pop-btn-neg" class="sent-card sent-neg" title="Open Sociafy Website with Negative comments">
       <span id="pop-val-neg" class="sent-pct">--%</span>
       <span class="sent-title">🔴 Negative</span>
       <span class="sent-sub">Open in Website ↗</span>
     </div>
 
-    <div id="pop-btn-neu" class="sent-card sent-neu" title="Open Sociafy Website with Neutral reviews for this product">
+    <div id="pop-btn-neu" class="sent-card sent-neu" title="Open Sociafy Website with Neutral comments">
       <span id="pop-val-neu" class="sent-pct">--%</span>
       <span class="sent-title">🟡 Neutral</span>
       <span class="sent-sub">Open in Website ↗</span>
     </div>
   </div>
 
-  <!-- Top Customer Complaints / Issues Breakdown -->
+  <!-- Recent Comments Preview -->
   <div class="section-label">
-    <span>Customer Problem Issues</span>
-    <span style="font-size: 9px; color: #94a3b8; text-transform: none;">Click to filter</span>
+    <span>Recent Comments Preview (Top 2)</span>
   </div>
-  <div class="issues-list">
-    <div id="pop-issue-del" class="issue-row">
-      <span>🚚 Delivery & Shipping Delay</span>
-      <span id="pop-count-del" class="badge-issue">--</span>
-    </div>
-    <div id="pop-issue-pri" class="issue-row">
-      <span>💰 Price & Cost Concerns</span>
-      <span id="pop-count-pri" class="badge-issue">--</span>
-    </div>
-    <div id="pop-issue-qua" class="issue-row">
-      <span>🧵 Fabric / Size / Quality Defects</span>
-      <span id="pop-count-qua" class="badge-issue">--</span>
-    </div>
+  <div id="pop-comments-box" class="comments-preview-box">
+    <div style="font-size: 10.5px; color: #94a3b8; text-align: center;">Analyzing audience comments with RoBERTa AI...</div>
   </div>
 
   <!-- Action Buttons -->
   <div class="btn-row">
-    <button id="pop-btn-open-panel" class="btn-focus">✨ Open Full Side-Panel</button>
-    <button id="pop-btn-exit-focus" class="btn-reset" title="Show all recommended products and reset page view">Exit Focus ✕</button>
+    <button id="pop-btn-open-panel" class="btn-focus">✨ Open Side-Panel</button>
+    <button id="pop-btn-view-all" class="btn-reset" title="View all comments in Sociafy Web Dashboard">View All on Web ↗</button>
   </div>
 
   <script src="popup.js"></script>
