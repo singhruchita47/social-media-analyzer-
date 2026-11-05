@@ -360,7 +360,7 @@
 
   function openInSociafyWebsite(sentiment) {
     const details = getProductDetails();
-    const webUrl = `http://localhost:5173/?url=${encodeURIComponent(details.url)}&sentiment=${encodeURIComponent(sentiment)}&platform=flipkart`;
+    const webUrl = `http://localhost:5173/#url=${encodeURIComponent(details.url)}&sentiment=${encodeURIComponent(sentiment)}&platform=flipkart`;
     window.open(webUrl, '_blank');
   }
 

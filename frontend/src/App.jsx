@@ -89,12 +89,17 @@ export default function App() {
     loadDashboardData(selectedPlatform);
   }, [selectedPlatform, loadDashboardData]);
 
-  // Auto-analyze URL triggered from Chrome Extension with selected sentiment filter
+  // Auto-analyze URL triggered from Chrome Extension with selected sentiment filter (Supports Hash & Query)
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const autoUrl = params.get('url');
-    const targetSentiment = params.get('sentiment') || 'all';
-    const targetPlatform = params.get('platform') || 'flipkart';
+    const hashString = window.location.hash.startsWith('#')
+      ? window.location.hash.substring(1)
+      : '';
+    const hashParams = new URLSearchParams(hashString);
+    const searchParams = new URLSearchParams(window.location.search);
+
+    const autoUrl = hashParams.get('url') || searchParams.get('url');
+    const targetSentiment = hashParams.get('sentiment') || searchParams.get('sentiment') || 'all';
+    const targetPlatform = hashParams.get('platform') || searchParams.get('platform') || 'flipkart';
 
     if (autoUrl) {
       const runAutoAnalysis = async () => {

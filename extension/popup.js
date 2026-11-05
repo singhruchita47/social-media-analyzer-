@@ -119,7 +119,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // 2. Click Handlers: Open Sociafy Website Dashboard with Pre-Filtered Sentiment
   function openInWebsite(sentiment) {
-    const webUrl = `http://localhost:5173/?url=${encodeURIComponent(url)}&sentiment=${encodeURIComponent(sentiment)}&platform=flipkart`;
+    const webUrl = `http://localhost:5173/#url=${encodeURIComponent(url)}&sentiment=${encodeURIComponent(sentiment)}&platform=flipkart`;
     chrome.tabs.create({ url: webUrl });
     window.close();
   }
