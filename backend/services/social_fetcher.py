@@ -907,12 +907,12 @@ class SocialCommentFetcher:
 
             page = 1
             target_limit = max(10, min(max_comments, 5000))
-            max_pages = min(25, math.ceil(target_limit / 12) + 2)
+            max_pages = min(15, math.ceil(target_limit / 12) + 1)
 
             while page <= max_pages:
                 page_url = f"https://www.myntra.com/reviews/{product_id}?page={page}"
                 try:
-                    resp = requests.get(page_url, headers=headers, timeout=12)
+                    resp = requests.get(page_url, headers=headers, timeout=5)
                     if resp.status_code != 200:
                         break
 

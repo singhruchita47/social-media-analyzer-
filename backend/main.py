@@ -26,7 +26,7 @@ from models import (
 )
 from services.data_pipeline import DataProcessingPipeline
 from services.nlp_engine import SentimentNLPEngine
-from services.social_fetcher import SocialCommentFetcher
+from services.social_fetcher import SocialCommentFetcher, extract_post_id
 
 _backend_dir = os.path.dirname(os.path.abspath(__file__))
 load_dotenv(os.path.join(_backend_dir, ".env"))
@@ -332,7 +332,7 @@ def health_check() -> Dict[str, object]:
 @app.post("/api/analyze", response_model=AnalysisResult)
 def analyze_post(request: AnalyzeRequest) -> AnalysisResult:
     """
-    Fetches comments from YouTube or Instagram, cleans & normalizes via Pandas,
+    Fetches comments from YouTube, Instagram, or E-Commerce stores, cleans & normalizes via Pandas,
     performs sentiment & pain-point analysis via Gemini/NLP, computes NumPy statistical
     distributions, saves to SQLite, and returns the complete analysis.
     """
@@ -340,6 +340,19 @@ def analyze_post(request: AnalyzeRequest) -> AnalysisResult:
         raise HTTPException(
             status_code=400, detail="A valid post_url or video/post ID is required."
         )
+
+    # Fast cache lookup: if this product or post was already analyzed, return instant identical analysis!
+    eff_platform = (
+        "instagram" if request.platform == "social_media"
+        else "flipkart" if request.platform in ("ecommerce", "myntra")
+        else request.platform
+    )
+    post_id = extract_post_id(eff_platform, request.post_url)
+    if not request.force_sandbox and not request.custom_comments:
+        cached = db.get_analysis_by_url_or_post_id(post_id, request.post_url)
+        if cached:
+            return cached
+
     return _run_analysis_pipeline(request)
 
 

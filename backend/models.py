@@ -26,6 +26,9 @@ class AnalyzeRequest(BaseModel):
     max_comments: int = Field(
         default=2000, ge=10, le=25000, description="Maximum number of comments to fetch via full pagination (supports up to 25,000 comments)"
     )
+    force_sandbox: bool = Field(
+        default=False, description="If true, forces simulated sandbox comments instead of live fetch"
+    )
 
 
 class CommentItem(BaseModel):
@@ -322,6 +325,27 @@ class DatabaseManager:
             if not row:
                 return None
             return AnalysisResult(**json.loads(row["payload_json"]))
+
+    def get_analysis_by_url_or_post_id(
+        self, post_id: str, post_url: str
+    ) -> Optional[AnalysisResult]:
+        """Returns cached analysis if the exact post or product was already analyzed."""
+        with self._get_conn() as conn:
+            row = conn.execute(
+                """
+                SELECT payload_json FROM analyses
+                WHERE post_id = ? OR post_url = ?
+                ORDER BY analyzed_at DESC LIMIT 1
+                """,
+                (post_id, post_url),
+            ).fetchone()
+            if not row:
+                return None
+            try:
+                data = json.loads(row["payload_json"])
+                return AnalysisResult(**data)
+            except Exception:
+                return None
 
     def delete_analysis(self, analysis_id: str) -> bool:
         with self._get_conn() as conn:
