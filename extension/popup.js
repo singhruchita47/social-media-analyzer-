@@ -95,16 +95,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
     }
   }
-    renderPopupData({
-      posPct: 84,
-      negPct: 10,
-      neuPct: 6,
-      totalAnalyzed: 120,
-      deliveryIssues: 3,
-      priceIssues: 2,
-      qualityIssues: 4,
-    });
-  }
 
   function renderPopupData(data) {
     document.getElementById('pop-val-pos').textContent = `${data.posPct}%`;
