@@ -95,36 +95,41 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('pop-count-qua').textContent = `${data.qualityIssues || 3} complaints`;
   }
 
-  // 2. Click Handlers: Trigger In-Page Auto-Scroll & Distraction Removal
+  // 2. Click Handlers: Open Sociafy Website Dashboard with Pre-Filtered Sentiment
+  function openInWebsite(sentiment) {
+    const webUrl = `http://localhost:5173/?url=${encodeURIComponent(url)}&sentiment=${encodeURIComponent(sentiment)}&platform=flipkart`;
+    chrome.tabs.create({ url: webUrl });
+    window.close();
+  }
+
   function sendFocusAction(action, sentimentOrType) {
     chrome.tabs.sendMessage(tab.id, { action: action, value: sentimentOrType }, () => {
-      // Close popup so the user can see the filtered page instantly
       window.close();
     });
   }
 
   document.getElementById('pop-btn-pos').addEventListener('click', () => {
-    sendFocusAction('FOCUS_FILTER', 'Positive');
+    openInWebsite('Positive');
   });
 
   document.getElementById('pop-btn-neg').addEventListener('click', () => {
-    sendFocusAction('FOCUS_FILTER', 'Negative');
+    openInWebsite('Negative');
   });
 
   document.getElementById('pop-btn-neu').addEventListener('click', () => {
-    sendFocusAction('FOCUS_FILTER', 'Neutral');
+    openInWebsite('Neutral');
   });
 
   document.getElementById('pop-issue-del').addEventListener('click', () => {
-    sendFocusAction('ISSUE_FILTER', 'delivery');
+    openInWebsite('all');
   });
 
   document.getElementById('pop-issue-pri').addEventListener('click', () => {
-    sendFocusAction('ISSUE_FILTER', 'price');
+    openInWebsite('all');
   });
 
   document.getElementById('pop-issue-qua').addEventListener('click', () => {
-    sendFocusAction('ISSUE_FILTER', 'quality');
+    openInWebsite('all');
   });
 
   document.getElementById('pop-btn-open-panel').addEventListener('click', () => {

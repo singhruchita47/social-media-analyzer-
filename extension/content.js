@@ -268,25 +268,25 @@
         <div>
           <div class="sociafy-section-title">
             <span>Customer Sentiment</span>
-            <span style="font-size: 9.5px; color: #8b5cf6; text-transform: none;">Click to view in page 🎯</span>
+            <span style="font-size: 9.5px; color: #8b5cf6; text-transform: none;">Click to open website ↗</span>
           </div>
           <div class="sociafy-sentiment-grid">
-            <div id="sociafy-btn-positive" class="sociafy-sentiment-btn sociafy-btn-pos" title="Click to view ONLY positive reviews and hide recommendations">
+            <div id="sociafy-btn-positive" class="sociafy-sentiment-btn sociafy-btn-pos" title="Open Sociafy Website with Positive reviews for this product">
               <span id="sociafy-val-pos" class="sociafy-pct-val">--%</span>
               <span class="sociafy-pct-label">🟢 Positive</span>
-              <span class="sociafy-click-action">View on site &rarr;</span>
+              <span class="sociafy-click-action">Open in Website ↗</span>
             </div>
 
-            <div id="sociafy-btn-negative" class="sociafy-sentiment-btn sociafy-btn-neg" title="Click to view ONLY negative reviews and hide recommendations">
+            <div id="sociafy-btn-negative" class="sociafy-sentiment-btn sociafy-btn-neg" title="Open Sociafy Website with Negative reviews for this product">
               <span id="sociafy-val-neg" class="sociafy-pct-val">--%</span>
               <span class="sociafy-pct-label">🔴 Negative</span>
-              <span class="sociafy-click-action">View on site &rarr;</span>
+              <span class="sociafy-click-action">Open in Website ↗</span>
             </div>
 
-            <div id="sociafy-btn-neutral" class="sociafy-sentiment-btn sociafy-btn-neu" title="Click to view neutral reviews">
+            <div id="sociafy-btn-neutral" class="sociafy-sentiment-btn sociafy-btn-neu" title="Open Sociafy Website with Neutral reviews for this product">
               <span id="sociafy-val-neu" class="sociafy-pct-val">--%</span>
               <span class="sociafy-pct-label">🟡 Neutral</span>
-              <span class="sociafy-click-action">View on site &rarr;</span>
+              <span class="sociafy-click-action">Open in Website ↗</span>
             </div>
           </div>
         </div>
@@ -324,29 +324,39 @@
           </div>
         </div>
 
-        <!-- Filtered Sample Reviews in Side Panel -->
+        <!-- Filtered Sample Reviews in Side Panel (Top 2-3 Preview Only) -->
         <div>
           <div class="sociafy-section-title">
-            <span>Recent Customer Reviews</span>
+            <span>Recent Reviews Preview (Top 2)</span>
           </div>
           <div id="sociafy-panel-reviews-list" class="sociafy-reviews-container">
             <div style="font-size: 11px; color: #94a3b8; text-align: center; padding: 12px;">Extracting on-screen reviews...</div>
           </div>
+          <button id="sociafy-btn-view-all-web" class="sociafy-btn-open-web" title="Open Sociafy Web Dashboard with all reviews and full AI analytics">
+            🚀 View All Comments in Sociafy Website &rarr;
+          </button>
         </div>
       </div>
     `;
 
     document.body.appendChild(panel);
 
-    // Event Listeners for Buttons inside Side Panel
+    // Event Listeners: Opens Sociafy Web App with that specific Sentiment & Product!
     document.getElementById('sociafy-close-btn').addEventListener('click', closeSidePanel);
-    document.getElementById('sociafy-btn-positive').addEventListener('click', () => applyFocusFilter('Positive'));
-    document.getElementById('sociafy-btn-negative').addEventListener('click', () => applyFocusFilter('Negative'));
-    document.getElementById('sociafy-btn-neutral').addEventListener('click', () => applyFocusFilter('Neutral'));
+    document.getElementById('sociafy-btn-positive').addEventListener('click', () => openInSociafyWebsite('Positive'));
+    document.getElementById('sociafy-btn-negative').addEventListener('click', () => openInSociafyWebsite('Negative'));
+    document.getElementById('sociafy-btn-neutral').addEventListener('click', () => openInSociafyWebsite('Neutral'));
+    document.getElementById('sociafy-btn-view-all-web').addEventListener('click', () => openInSociafyWebsite('all'));
 
-    document.getElementById('sociafy-issue-del').addEventListener('click', () => applyIssueFilter('delivery'));
-    document.getElementById('sociafy-issue-pri').addEventListener('click', () => applyIssueFilter('price'));
-    document.getElementById('sociafy-issue-qua').addEventListener('click', () => applyIssueFilter('quality'));
+    document.getElementById('sociafy-issue-del').addEventListener('click', () => openInSociafyWebsite('all'));
+    document.getElementById('sociafy-issue-pri').addEventListener('click', () => openInSociafyWebsite('all'));
+    document.getElementById('sociafy-issue-qua').addEventListener('click', () => openInSociafyWebsite('all'));
+  }
+
+  function openInSociafyWebsite(sentiment) {
+    const details = getProductDetails();
+    const webUrl = `http://localhost:5173/?url=${encodeURIComponent(details.url)}&sentiment=${encodeURIComponent(sentiment)}&platform=flipkart`;
+    window.open(webUrl, '_blank');
   }
 
   // 7. Open & Close Side Panel
@@ -407,11 +417,11 @@
     document.getElementById('sociafy-count-pri').textContent = `${data.priceIssues} issues`;
     document.getElementById('sociafy-count-qua').textContent = `${data.qualityIssues} issues`;
 
-    // Render Mini Reviews list
+    // Render Mini Reviews list (Preview: Top 2 Only)
     const listEl = document.getElementById('sociafy-panel-reviews-list');
     if (listEl && data.reviews && data.reviews.length > 0) {
       listEl.innerHTML = '';
-      data.reviews.slice(0, 5).forEach((r) => {
+      data.reviews.slice(0, 2).forEach((r) => {
         const item = document.createElement('div');
         item.className = 'sociafy-mini-review';
         const color = r.sentiment === 'Positive' ? '#10b981' : r.sentiment === 'Negative' ? '#ef4444' : '#f59e0b';

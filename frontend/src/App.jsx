@@ -89,6 +89,44 @@ export default function App() {
     loadDashboardData(selectedPlatform);
   }, [selectedPlatform, loadDashboardData]);
 
+  // Auto-analyze URL triggered from Chrome Extension with selected sentiment filter
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const autoUrl = params.get('url');
+    const targetSentiment = params.get('sentiment') || 'all';
+    const targetPlatform = params.get('platform') || 'flipkart';
+
+    if (autoUrl) {
+      const runAutoAnalysis = async () => {
+        setIsAnalyzing(true);
+        try {
+          const result = await analyzeSocialPost({
+            platform: targetPlatform,
+            post_url: autoUrl,
+            max_comments: 50,
+          });
+          setSelectedPlatform(result.platform);
+          setActiveSingleAnalysis(result);
+          await loadDashboardData(result.platform);
+          setActiveTab('insights');
+          if (targetSentiment && targetSentiment !== 'all') {
+            setSentimentFilter(targetSentiment);
+          }
+          showToast(
+            `Live ${result.platform.toUpperCase()} Analysis Ready: "${result.post_title}" — showing ${targetSentiment} comments!`
+          );
+        } catch (e) {
+          console.error('Auto analysis error:', e);
+          showToast('Could not auto-analyze link from extension: ' + (e.message || ''));
+        } finally {
+          setIsAnalyzing(false);
+        }
+      };
+      runAutoAnalysis();
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [loadDashboardData]);
+
   const handlePlatformChange = (newPlatform) => {
     setSelectedPlatform(newPlatform);
     if (activeSingleAnalysis && activeSingleAnalysis.platform !== newPlatform) {
