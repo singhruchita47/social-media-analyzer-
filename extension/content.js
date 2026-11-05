@@ -631,7 +631,46 @@
   }
 
   // ==========================================================================
-  // 10. Initialization
+  // 10. Message Listener (Handles actions from Toolbar Popup)
+  // ==========================================================================
+  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === 'GET_ANALYSIS') {
+      if (!currentAnalysis) {
+        const details = getProductDetails();
+        const rawReviews = extractOnPageReviews();
+        currentAnalysis = analyzeReviewsLocally(rawReviews, details.title);
+      }
+      sendResponse({ analysis: currentAnalysis });
+      return true;
+    }
+
+    if (request.action === 'FOCUS_FILTER') {
+      applyFocusFilter(request.value);
+      sendResponse({ status: 'OK' });
+      return true;
+    }
+
+    if (request.action === 'ISSUE_FILTER') {
+      applyIssueFilter(request.value);
+      sendResponse({ status: 'OK' });
+      return true;
+    }
+
+    if (request.action === 'OPEN_SIDE_PANEL') {
+      openSidePanel();
+      sendResponse({ status: 'OK' });
+      return true;
+    }
+
+    if (request.action === 'EXIT_FOCUS') {
+      exitFocusMode();
+      sendResponse({ status: 'OK' });
+      return true;
+    }
+  });
+
+  // ==========================================================================
+  // 11. Initialization
   // ==========================================================================
   function init() {
     createFloatingTrigger();

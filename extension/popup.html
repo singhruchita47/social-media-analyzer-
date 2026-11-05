@@ -6,7 +6,7 @@
   <title>Sociafy AI</title>
   <style>
     body {
-      width: 320px;
+      width: 360px;
       margin: 0;
       padding: 16px;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -17,9 +17,14 @@
     .header {
       display: flex;
       align-items: center;
-      gap: 10px;
+      justify-content: space-between;
       padding-bottom: 12px;
       border-bottom: 1px solid #334155;
+    }
+    .brand-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
     .logo-badge {
       width: 32px;
@@ -32,148 +37,250 @@
       font-size: 16px;
     }
     .title {
-      font-size: 15px;
-      font-weight: 700;
+      font-size: 14px;
+      font-weight: 800;
       background: linear-gradient(135deg, #f472b6, #c084fc);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
-    .subtitle {
-      font-size: 11px;
-      color: #94a3b8;
+    .badge-live {
+      font-size: 10px;
+      font-weight: 700;
+      color: #34d399;
+      background: rgba(52, 211, 153, 0.15);
+      border: 1px solid rgba(52, 211, 153, 0.3);
+      padding: 2px 7px;
+      border-radius: 9999px;
     }
-    .status-card {
-      margin-top: 14px;
+
+    /* Product Card */
+    .product-box {
+      margin-top: 12px;
       background: #1e293b;
       border: 1px solid #334155;
       border-radius: 10px;
-      padding: 12px;
+      padding: 10px 12px;
     }
-    .status-row {
+    .product-name {
+      font-size: 12px;
+      font-weight: 700;
+      color: #f1f5f9;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .product-sub {
+      font-size: 10.5px;
+      color: #94a3b8;
+      margin-top: 3px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* Sentiment Grid (Positive, Negative, Neutral %) */
+    .section-label {
+      font-size: 10.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #94a3b8;
+      margin-top: 14px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .sentiment-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .sent-card {
+      border-radius: 10px;
+      padding: 10px 6px;
+      border: 1.5px solid;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      user-select: none;
+    }
+    .sent-card:hover {
+      transform: translateY(-2px);
+    }
+    .sent-pos {
+      background: rgba(16, 185, 129, 0.12);
+      border-color: #10b981;
+      color: #34d399;
+    }
+    .sent-neg {
+      background: rgba(239, 68, 68, 0.12);
+      border-color: #ef4444;
+      color: #f87171;
+    }
+    .sent-neu {
+      background: rgba(245, 158, 11, 0.12);
+      border-color: #f59e0b;
+      color: #fbbf24;
+    }
+    .sent-pct {
+      font-size: 19px;
+      font-weight: 800;
+      display: block;
+    }
+    .sent-title {
+      font-size: 10.5px;
+      font-weight: 700;
+      margin-top: 2px;
+      display: block;
+    }
+    .sent-sub {
+      font-size: 8.5px;
+      color: #cbd5e1;
+      margin-top: 4px;
+      display: block;
+      text-decoration: underline;
+    }
+
+    /* Problem breakdown */
+    .issues-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 6px;
+    }
+    .issue-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      font-size: 12px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-size: 11.5px;
+      cursor: pointer;
+      transition: background 0.15s;
     }
-    .status-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      color: #34d399;
-      font-weight: 600;
-      font-size: 11px;
+    .issue-row:hover {
+      background: #273549;
     }
-    .dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: #34d399;
-      box-shadow: 0 0 8px #34d399;
-    }
-    .instruction-box {
-      margin-top: 14px;
-      font-size: 12px;
-      line-height: 1.5;
-      color: #cbd5e1;
-    }
-    .step {
-      display: flex;
-      align-items: flex-start;
-      gap: 8px;
-      margin-bottom: 8px;
-    }
-    .step-num {
-      background: #334155;
-      color: #f8fafc;
+    .badge-issue {
+      background: #7f1d1d;
+      color: #fecaca;
       font-size: 10px;
       font-weight: 700;
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
+      padding: 2px 6px;
+      border-radius: 9999px;
+    }
+
+    /* Actions */
+    .btn-row {
       display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      margin-top: 1px;
+      gap: 8px;
+      margin-top: 14px;
     }
-    .platforms-grid {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 12px;
-    }
-    .pill {
-      font-size: 10.5px;
-      padding: 3px 8px;
-      background: #334155;
-      border-radius: 6px;
-      color: #e2e8f0;
-    }
-    .btn-dashboard {
-      display: block;
-      width: 100%;
-      margin-top: 16px;
-      padding: 10px;
-      text-align: center;
-      background: linear-gradient(135deg, #ec4899, #8b5cf6);
-      color: #ffffff;
-      text-decoration: none;
-      font-size: 12.5px;
-      font-weight: 700;
+    .btn-focus {
+      flex: 1;
+      padding: 9px;
       border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(236, 72, 153, 0.35);
+      font-size: 11.5px;
+      font-weight: 700;
       border: none;
       cursor: pointer;
-      box-sizing: border-box;
+      background: linear-gradient(135deg, #ec4899, #8b5cf6);
+      color: #ffffff;
+      text-align: center;
       transition: opacity 0.2s;
     }
-    .btn-dashboard:hover {
+    .btn-focus:hover {
       opacity: 0.92;
+    }
+    .btn-reset {
+      padding: 9px 12px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      background: #334155;
+      color: #cbd5e1;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-reset:hover {
+      background: #475569;
+      color: #ffffff;
     }
   </style>
 </head>
 <body>
   <div class="header">
-    <div class="logo-badge">✨</div>
-    <div>
-      <div class="title">Sociafy AI Extension</div>
-      <div class="subtitle">E-Commerce Sentiment & Focus Filter</div>
+    <div class="brand-left">
+      <div class="logo-badge">✨</div>
+      <div>
+        <div class="title">Sociafy AI Analysis</div>
+        <div style="font-size: 10px; color: #94a3b8;">Instant E-Commerce Sentiment</div>
+      </div>
+    </div>
+    <span class="badge-live">● Live NLP</span>
+  </div>
+
+  <!-- Detected Product Card -->
+  <div class="product-box">
+    <div id="pop-title" class="product-name">Detecting product...</div>
+    <div class="product-sub">
+      <span id="pop-platform">Platform: Detecting...</span>
+      <span id="pop-total-reviews">-- reviews</span>
     </div>
   </div>
 
-  <div class="status-card">
-    <div class="status-row">
-      <span style="color: #94a3b8;">In-Page Engine</span>
-      <span class="status-badge"><span class="dot"></span> Active & Ready</span>
+  <!-- 3 Sentiments: Positive, Negative, Neutral (Clickable to Filter on Page) -->
+  <div class="section-label">
+    <span>Customer Sentiment %</span>
+    <span style="color: #c084fc; font-size: 9px; text-transform: none;">Click to view in page 🎯</span>
+  </div>
+  <div class="sentiment-grid">
+    <div id="pop-btn-pos" class="sent-card sent-pos" title="Click to view ONLY positive reviews on this product page">
+      <span id="pop-val-pos" class="sent-pct">--%</span>
+      <span class="sent-title">🟢 Positive</span>
+      <span class="sent-sub">View on page &rarr;</span>
+    </div>
+
+    <div id="pop-btn-neg" class="sent-card sent-neg" title="Click to view ONLY negative reviews on this product page">
+      <span id="pop-val-neg" class="sent-pct">--%</span>
+      <span class="sent-title">🔴 Negative</span>
+      <span class="sent-sub">View on page &rarr;</span>
+    </div>
+
+    <div id="pop-btn-neu" class="sent-card sent-neu" title="Click to view neutral reviews on this product page">
+      <span id="pop-val-neu" class="sent-pct">--%</span>
+      <span class="sent-title">🟡 Neutral</span>
+      <span class="sent-sub">View on page &rarr;</span>
     </div>
   </div>
 
-  <div class="instruction-box">
-    <div style="font-weight: 700; color: #f1f5f9; margin-bottom: 8px;">How to use on product pages:</div>
-    <div class="step">
-      <div class="step-num">1</div>
-      <div>Open any product page on Amazon, Flipkart, Myntra, etc.</div>
+  <!-- Top Customer Complaints / Issues Breakdown -->
+  <div class="section-label">
+    <span>Customer Problem Issues</span>
+    <span style="font-size: 9px; color: #94a3b8; text-transform: none;">Click to filter</span>
+  </div>
+  <div class="issues-list">
+    <div id="pop-issue-del" class="issue-row">
+      <span>🚚 Delivery & Shipping Delay</span>
+      <span id="pop-count-del" class="badge-issue">--</span>
     </div>
-    <div class="step">
-      <div class="step-num">2</div>
-      <div>Click the <strong>✨ Sociafy AI</strong> floating pill at bottom-right.</div>
+    <div id="pop-issue-pri" class="issue-row">
+      <span>💰 Price & Cost Concerns</span>
+      <span id="pop-count-pri" class="badge-issue">--</span>
     </div>
-    <div class="step">
-      <div class="step-num">3</div>
-      <div>Click <strong>Positive / Negative</strong> to auto-scroll & hide all recommended products.</div>
+    <div id="pop-issue-qua" class="issue-row">
+      <span>🧵 Fabric / Size / Quality Defects</span>
+      <span id="pop-count-qua" class="badge-issue">--</span>
     </div>
   </div>
 
-  <div class="platforms-grid">
-    <span class="pill">Amazon</span>
-    <span class="pill">Flipkart</span>
-    <span class="pill">Myntra</span>
-    <span class="pill">Meesho</span>
-    <span class="pill">Nykaa</span>
-    <span class="pill">Ajio</span>
+  <!-- Action Buttons -->
+  <div class="btn-row">
+    <button id="pop-btn-open-panel" class="btn-focus">✨ Open Full Side-Panel</button>
+    <button id="pop-btn-exit-focus" class="btn-reset" title="Show all recommended products and reset page view">Exit Focus ✕</button>
   </div>
-
-  <button id="open-dashboard-btn" class="btn-dashboard">Open Web Dashboard &rarr;</button>
 
   <script src="popup.js"></script>
 </body>
