@@ -117,6 +117,12 @@ export default function App() {
           if (targetSentiment && targetSentiment !== 'all') {
             setSentimentFilter(targetSentiment);
           }
+          setTimeout(() => {
+            const el = document.getElementById('comments-list-section');
+            if (el) {
+              el.scrollIntoView({ behavior: 'smooth' });
+            }
+          }, 350);
           showToast(
             `Live ${result.platform.toUpperCase()} Analysis Ready: "${result.post_title}" — showing ${targetSentiment} comments!`
           );

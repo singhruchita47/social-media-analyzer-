@@ -1,5 +1,5 @@
 // ==========================================================================
-// Sociafy AI — Auto-Detect Comment Sentiment Analysis Engine
+// Sociafy AI — Auto-Detect Content Script (Lightweight Background Agent)
 // Supports: YouTube, Instagram, Amazon, Flipkart, Myntra, Meesho, Nykaa, Ajio
 // ==========================================================================
 
@@ -10,7 +10,7 @@
   if (window.__sociafy_injected) return;
   window.__sociafy_injected = true;
 
-  console.log('[Sociafy AI] Initializing Auto-Detect Comment Sentiment Engine...');
+  console.log('[Sociafy AI] Content script active (No on-page UI distraction).');
 
   let currentAnalysis = null;
 
@@ -226,217 +226,7 @@
     };
   }
 
-  // 3. Inject Floating Trigger Button
-  function createFloatingTrigger() {
-    if (document.getElementById('sociafy-floating-trigger')) return;
-
-    const trigger = document.createElement('div');
-    trigger.id = 'sociafy-floating-trigger';
-    trigger.innerHTML = `
-      <span class="sociafy-spark-icon">✨</span>
-      <span>Sociafy AI Analysis</span>
-    `;
-    trigger.title = 'Click to view Auto-Detected Comment Sentiment Analysis';
-    trigger.addEventListener('click', toggleSidePanel);
-    document.body.appendChild(trigger);
-  }
-
-  // 4. Inject Side Panel Structure (Cleaned: NO Delivery, Price, Quality — Comments Only!)
-  function createSidePanel() {
-    if (document.getElementById('sociafy-side-panel')) return;
-
-    // Backdrop
-    const backdrop = document.createElement('div');
-    backdrop.id = 'sociafy-panel-backdrop';
-    backdrop.addEventListener('click', closeSidePanel);
-    document.body.appendChild(backdrop);
-
-    // Panel
-    const panel = document.createElement('div');
-    panel.id = 'sociafy-side-panel';
-    panel.innerHTML = `
-      <div class="sociafy-header">
-        <div class="sociafy-brand-row">
-          <span style="font-weight: 800; font-size: 14px; background: linear-gradient(135deg, #ec4899, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Sociafy AI</span>
-          <span id="sociafy-badge-platform" class="sociafy-badge-brand">Store</span>
-        </div>
-        <button id="sociafy-close-btn" class="sociafy-close-btn" title="Close Panel">✕</button>
-      </div>
-
-      <div class="sociafy-body">
-        <!-- Auto-Detected Link Badge -->
-        <div class="sociafy-autodetect-box">
-          <span class="sociafy-autodetect-pill">AUTO-DETECTED</span>
-          <span id="sociafy-detected-url" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Detecting link...</span>
-        </div>
-
-        <!-- Post / Video / Product Info Card -->
-        <div class="sociafy-product-card">
-          <div id="sociafy-p-title" class="sociafy-product-title">Loading content...</div>
-          <div class="sociafy-meta-row">
-            <span id="sociafy-total-reviews-count">Analyzing audience comments...</span>
-            <span style="color: #10b981; font-weight: 700;">● Live RoBERTa AI</span>
-          </div>
-        </div>
-
-        <!-- Sentiment Section with Clickable Action Filters -->
-        <div>
-          <div class="sociafy-section-title">
-            <span>Audience Comment Sentiment</span>
-            <span style="font-size: 9.5px; color: #8b5cf6; text-transform: none;">Click to open website ↗</span>
-          </div>
-          <div class="sociafy-sentiment-grid">
-            <div id="sociafy-btn-positive" class="sociafy-sentiment-btn sociafy-btn-pos" title="Open Sociafy Website with Positive comments">
-              <span id="sociafy-val-pos" class="sociafy-pct-val">--%</span>
-              <span class="sociafy-pct-label">🟢 Positive</span>
-              <span class="sociafy-click-action">Open in Website ↗</span>
-            </div>
-
-            <div id="sociafy-btn-negative" class="sociafy-sentiment-btn sociafy-btn-neg" title="Open Sociafy Website with Negative comments">
-              <span id="sociafy-val-neg" class="sociafy-pct-val">--%</span>
-              <span class="sociafy-pct-label">🔴 Negative</span>
-              <span class="sociafy-click-action">Open in Website ↗</span>
-            </div>
-
-            <div id="sociafy-btn-neutral" class="sociafy-sentiment-btn sociafy-btn-neu" title="Open Sociafy Website with Neutral comments">
-              <span id="sociafy-val-neu" class="sociafy-pct-val">--%</span>
-              <span class="sociafy-pct-label">🟡 Neutral</span>
-              <span class="sociafy-click-action">Open in Website ↗</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Recent Preview Comments (Top 2 Preview Only) -->
-        <div>
-          <div class="sociafy-section-title">
-            <span>Recent Comments Preview (Top 2)</span>
-          </div>
-          <div id="sociafy-panel-reviews-list" class="sociafy-reviews-container">
-            <div style="font-size: 11px; color: #94a3b8; text-align: center; padding: 12px;">Auto-detecting and scoring audience comments...</div>
-          </div>
-          <button id="sociafy-btn-view-all-web" class="sociafy-btn-open-web" title="Open Sociafy Web Dashboard with all comments and full AI analytics">
-            🚀 View All Comments in Sociafy Website &rarr;
-          </button>
-        </div>
-      </div>
-    `;
-
-    document.body.appendChild(panel);
-
-    // Event Listeners: Opens Sociafy Web App with that specific Sentiment & Product Link!
-    document.getElementById('sociafy-close-btn').addEventListener('click', closeSidePanel);
-    document.getElementById('sociafy-btn-positive').addEventListener('click', () => openInSociafyWebsite('Positive'));
-    document.getElementById('sociafy-btn-negative').addEventListener('click', () => openInSociafyWebsite('Negative'));
-    document.getElementById('sociafy-btn-neutral').addEventListener('click', () => openInSociafyWebsite('Neutral'));
-    document.getElementById('sociafy-btn-view-all-web').addEventListener('click', () => openInSociafyWebsite('all'));
-  }
-
-  function openInSociafyWebsite(sentiment) {
-    const details = autoDetectPageContext();
-    const webUrl = `http://localhost:5173/#url=${encodeURIComponent(details.url)}&sentiment=${encodeURIComponent(sentiment)}&platform=${encodeURIComponent(details.platform)}`;
-    window.open(webUrl, '_blank');
-  }
-
-  // 5. Open & Close Side Panel
-  function toggleSidePanel() {
-    const panel = document.getElementById('sociafy-side-panel');
-    if (panel.classList.contains('sociafy-panel-open')) {
-      closeSidePanel();
-    } else {
-      openSidePanel();
-    }
-  }
-
-  function openSidePanel() {
-    const panel = document.getElementById('sociafy-side-panel');
-    const backdrop = document.getElementById('sociafy-panel-backdrop');
-    if (panel && backdrop) {
-      panel.classList.add('sociafy-panel-open');
-      backdrop.classList.add('sociafy-backdrop-active');
-      triggerAnalysis();
-    }
-  }
-
-  function closeSidePanel() {
-    const panel = document.getElementById('sociafy-side-panel');
-    const backdrop = document.getElementById('sociafy-panel-backdrop');
-    if (panel && backdrop) {
-      panel.classList.remove('sociafy-panel-open');
-      backdrop.classList.remove('sociafy-backdrop-active');
-    }
-  }
-
-  // 6. Trigger Backend Comment Analysis & Populate UI
-  async function triggerAnalysis() {
-    const details = autoDetectPageContext();
-    document.getElementById('sociafy-badge-platform').textContent = details.brandName;
-    document.getElementById('sociafy-p-title').textContent = details.title;
-    document.getElementById('sociafy-p-title').title = details.title;
-    document.getElementById('sociafy-detected-url').textContent = details.url;
-    document.getElementById('sociafy-detected-url').title = details.url;
-
-    // Show loading state while calling backend
-    document.getElementById('sociafy-total-reviews-count').textContent = 'Analyzing audience comments with AI...';
-
-    const deepAnalysis = await fetchBackendCommentAnalysis(details);
-    currentAnalysis = deepAnalysis;
-    renderAnalysisData(deepAnalysis);
-  }
-
-  function renderAnalysisData(data) {
-    if (data.title) {
-      document.getElementById('sociafy-p-title').textContent = data.title;
-      document.getElementById('sociafy-p-title').title = data.title;
-    }
-
-    if (data.url) {
-      document.getElementById('sociafy-detected-url').textContent = data.url;
-      document.getElementById('sociafy-detected-url').title = data.url;
-    }
-
-    document.getElementById('sociafy-val-pos').textContent = `${data.posPct}%`;
-    document.getElementById('sociafy-val-neg').textContent = `${data.negPct}%`;
-    document.getElementById('sociafy-val-neu').textContent = `${data.neuPct}%`;
-
-    const posLabel = data.posCount ? `🟢 Positive (${data.posCount})` : '🟢 Positive';
-    const negLabel = data.negCount ? `🔴 Negative (${data.negCount})` : '🔴 Negative';
-    const neuLabel = data.neuCount ? `🟡 Neutral (${data.neuCount})` : '🟡 Neutral';
-
-    const posEl = document.querySelector('#sociafy-btn-positive .sociafy-pct-label');
-    const negEl = document.querySelector('#sociafy-btn-negative .sociafy-pct-label');
-    const neuEl = document.querySelector('#sociafy-btn-neutral .sociafy-pct-label');
-    if (posEl) posEl.textContent = posLabel;
-    if (negEl) negEl.textContent = negLabel;
-    if (neuEl) neuEl.textContent = neuLabel;
-
-    document.getElementById('sociafy-total-reviews-count').textContent = `${data.totalAnalyzed} audience comments analyzed • 100% Cleaned`;
-
-    const viewAllBtn = document.getElementById('sociafy-btn-view-all-web');
-    if (viewAllBtn) {
-      viewAllBtn.innerHTML = `🚀 View All ${data.totalAnalyzed} Comments in Sociafy Website &rarr;`;
-    }
-
-    // Render Preview Comments (Top 2 Preview Only)
-    const listEl = document.getElementById('sociafy-panel-reviews-list');
-    if (listEl && data.comments && data.comments.length > 0) {
-      listEl.innerHTML = '';
-      data.comments.slice(0, 2).forEach((c) => {
-        const item = document.createElement('div');
-        item.className = 'sociafy-mini-review';
-        const color = c.sentiment === 'Positive' ? '#10b981' : c.sentiment === 'Negative' ? '#ef4444' : '#f59e0b';
-        item.innerHTML = `
-          <div class="sociafy-mini-author">
-            <span>Verified User (${c.author})</span>
-            <span style="color: ${color}; font-weight: 700;">${c.sentiment}</span>
-          </div>
-          <div>${c.text.substring(0, 140)}${c.text.length > 140 ? '...' : ''}</div>
-        `;
-        listEl.appendChild(item);
-      });
-    }
-  }
-
-  // 7. Message listener for Popup script communication
+  // 3. Message listener for Toolbar Popup script communication
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'GET_ANALYSIS') {
       if (currentAnalysis) {
@@ -452,22 +242,18 @@
       return true;
     }
 
-    if (request.action === 'OPEN_PANEL') {
-      openSidePanel();
-      sendResponse({ status: 'OK' });
+    if (request.action === 'GET_PAGE_DETAILS') {
+      const details = autoDetectPageContext();
+      sendResponse({ details: details });
       return true;
     }
   });
 
-  // 8. Initialization
-  function init() {
-    createFloatingTrigger();
-    createSidePanel();
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
+  // Pre-load analysis silently in background so popup opens instantly
+  const initialDetails = autoDetectPageContext();
+  if (initialDetails.isSupported) {
+    fetchBackendCommentAnalysis(initialDetails).then((analysis) => {
+      currentAnalysis = analysis;
+    });
   }
 })();

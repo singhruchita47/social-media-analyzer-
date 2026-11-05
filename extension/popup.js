@@ -226,10 +226,4 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('pop-btn-view-all').addEventListener('click', () => {
     openInWebsite('all');
   });
-
-  document.getElementById('pop-btn-open-panel').addEventListener('click', () => {
-    chrome.tabs.sendMessage(tab.id, { action: 'OPEN_PANEL' }, () => {
-      window.close();
-    });
-  });
 });

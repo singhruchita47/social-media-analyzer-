@@ -588,6 +588,7 @@ export default function LiveInsightsPanel({
       {/* SECTION 2 (BOTTOM): CLEAN, SPACIOUS COMMENTS SENTIMENT & PROBLEM LIST */}
       {/* ==================================================================== */}
       <div
+        id="comments-list-section"
         className={`rounded-3xl border overflow-hidden ${
           darkMode
             ? 'bg-slate-900 border-slate-800'
