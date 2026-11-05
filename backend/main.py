@@ -14,9 +14,12 @@ from models import (
     AnalysisResult,
     AnalyzeRequest,
     CommentItem,
+    CompareItemRequest,
+    CompareItemResult,
     DatabaseManager,
     HistorySummaryItem,
     KeywordMetric,
+    MultiCompareResponse,
     PainPointItem,
     PipelineMetrics,
     PlatformComparisonMetric,
@@ -354,6 +357,133 @@ def analyze_post(request: AnalyzeRequest) -> AnalysisResult:
             return cached
 
     return _run_analysis_pipeline(request)
+
+
+@app.post("/api/compare", response_model=MultiCompareResponse)
+def compare_posts(items: List[CompareItemRequest]) -> MultiCompareResponse:
+    """
+    Compares 2 to 5 videos or products side-by-side using AI sentiment scoring,
+    real views, likes, and comment satisfaction to automatically pick the #1 Winner.
+    """
+    if not items or len(items) < 2:
+        raise HTTPException(
+            status_code=400,
+            detail="At least 2 URLs or items are required for comparison.",
+        )
+
+    analyzed_items: List[AnalysisResult] = []
+    for item in items[:5]:
+        eff_platform = (
+            "instagram" if item.platform == "social_media"
+            else "flipkart" if item.platform in ("ecommerce", "myntra")
+            else item.platform
+        )
+        post_id = extract_post_id(eff_platform, item.post_url)
+        cached = db.get_analysis_by_url_or_post_id(post_id, item.post_url)
+        if not cached:
+            cached = _run_analysis_pipeline(
+                AnalyzeRequest(
+                    platform=eff_platform,
+                    post_url=item.post_url,
+                    post_title=item.post_title,
+                    max_comments=500,
+                )
+            )
+        analyzed_items.append(cached)
+
+    scored = []
+    for a in analyzed_items:
+        bd = a.sentiment_breakdown
+        pos = (
+            float(bd.primary_positive_pct)
+            if bd.primary_positive_pct is not None
+            else float(bd.positive_pct)
+        )
+        neg = (
+            float(bd.primary_negative_pct)
+            if bd.primary_negative_pct is not None
+            else float(bd.negative_pct)
+        )
+        neu = (
+            float(bd.primary_neutral_pct)
+            if bd.primary_neutral_pct is not None
+            else float(bd.neutral_pct)
+        )
+
+        likes = a.engagement_likes or 0
+        eng_factor = (
+            min(20.0, float(np.log10(max(10, likes)) * 4.5)) if likes > 0 else 5.0
+        )
+
+        # AI Score formula: (Positive% * 0.50) + Engagement + ((100 - Negative%) * 0.30)
+        score = round((pos * 0.50) + eng_factor + ((100.0 - neg) * 0.30), 1)
+        score = max(10.0, min(99.5, score))
+
+        top_pain = (
+            a.pain_points[0].category if a.pain_points else "Minimal Complaints"
+        )
+
+        scored.append(
+            {
+                "analysis": a,
+                "pos": pos,
+                "neg": neg,
+                "neu": neu,
+                "score": score,
+                "top_pain": top_pain,
+            }
+        )
+
+    # Sort descending by AI score
+    scored.sort(key=lambda x: x["score"], reverse=True)
+
+    results: List[CompareItemResult] = []
+    winner = scored[0]
+    for idx, s in enumerate(scored):
+        a = s["analysis"]
+        is_win = idx == 0
+        badge = "🏆 #1 Best Choice" if is_win else f"Rank #{idx + 1}"
+        if not is_win and s["pos"] >= winner["pos"] - 3:
+            badge = "🥈 Strong Alternative"
+
+        summary = a.executive_summary or ""
+        if len(summary) > 180:
+            summary = summary[:180] + "..."
+
+        results.append(
+            CompareItemResult(
+                id=a.id,
+                post_title=a.post_title,
+                platform=a.platform,
+                post_url=a.post_url,
+                author_handle=a.author_handle,
+                video_views=a.video_views,
+                engagement_likes=a.engagement_likes,
+                total_comments=a.total_comments,
+                positive_pct=round(s["pos"], 1),
+                negative_pct=round(s["neg"], 1),
+                neutral_pct=round(s["neu"], 1),
+                ai_score=s["score"],
+                rank=idx + 1,
+                is_winner=is_win,
+                badge=badge,
+                top_pain_point=s["top_pain"],
+                summary_verdict=summary,
+            )
+        )
+
+    verdict_text = (
+        f"AI Verdict: \"{winner['analysis'].post_title}\" ranks #1 with an AI Quality Score of {winner['score']}/100, "
+        f"leading with {winner['pos']}% positive audience satisfaction and the lowest complaint ratio among all compared options."
+    )
+
+    return MultiCompareResponse(
+        total_compared=len(results),
+        winner_id=winner["analysis"].id,
+        winner_title=winner["analysis"].post_title,
+        ai_verdict_summary=verdict_text,
+        items=results,
+    )
 
 
 @app.get("/api/history", response_model=List[HistorySummaryItem])

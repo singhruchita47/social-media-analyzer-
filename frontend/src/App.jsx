@@ -8,6 +8,7 @@ import TopKeywordsWidget from './components/TopKeywordsWidget.jsx';
 import LiveInsightsPanel from './components/LiveInsightsPanel.jsx';
 import PlatformAnalyticsView from './components/PlatformAnalyticsView.jsx';
 import HistoryView from './components/HistoryView.jsx';
+import MultiComparisonView from './components/MultiComparisonView.jsx';
 import AnalyzeModal from './components/AnalyzeModal.jsx';
 import ExtensionModal from './components/ExtensionModal.jsx';
 import {
@@ -407,7 +408,7 @@ export default function App() {
                 {[
                   { id: 'dashboard', label: '📊 Reach & Dashboard' },
                   { id: 'insights', label: '💬 Comments Analysis (AI)' },
-                  { id: 'platforms', label: '📈 Post Reach Breakdown' },
+                  { id: 'compare', label: isFK ? '⚖️ Product Comparison (AI)' : '⚖️ Multi-Video Compare (AI)' },
                   { id: 'history', label: `🕒 Analyzed History (${historyItems.length})` },
                 ].map((nav) => (
                   <button
@@ -723,6 +724,19 @@ export default function App() {
                 onExportPDF={handleExportPDF}
               />
             </div>
+          )}
+
+          {/* ============================================================== */}
+          {/* TAB: MULTI-ITEM / MULTI-VIDEO / PRODUCT COMPARISON             */}
+          {/* ============================================================== */}
+          {activeTab === 'compare' && (
+            <MultiComparisonView
+              selectedPlatform={selectedPlatform}
+              darkMode={darkMode}
+              historyItems={historyItems}
+              onSelectPostForComments={handleSelectPostById}
+              onOpenAnalyzeModal={() => setIsAnalyzeModalOpen(true)}
+            />
           )}
 
           {/* ============================================================== */}

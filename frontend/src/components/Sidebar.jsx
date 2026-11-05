@@ -4,6 +4,7 @@ import {
   Sparkles,
   BarChart3,
   MessageSquareHeart,
+  Scale,
   History,
   Trophy,
   RotateCcw,
@@ -17,6 +18,7 @@ import {
 const MAIN_MENU = [
   { id: 'dashboard', label: 'Reach & Dashboard', fkLabel: 'Reviews & Rating', icon: BarChart3 },
   { id: 'insights', label: 'Comments Analysis', fkLabel: 'Review Analysis', icon: MessageSquareHeart, badge: 'AI' },
+  { id: 'compare', label: 'Multi-Video Compare', fkLabel: 'Product Comparison', icon: Scale, badge: 'AI' },
   { id: 'sentiment', label: 'Sentiment Overview', fkLabel: 'Customer Sentiment', icon: Sparkles },
   { id: 'history', label: 'Analyzed History', fkLabel: 'Analyzed Products', icon: History },
 ];

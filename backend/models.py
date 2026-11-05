@@ -209,6 +209,40 @@ class AggregatedStatsResponse(BaseModel):
     recent_comments: List[CommentItem]
 
 
+class CompareItemRequest(BaseModel):
+    post_url: str
+    platform: PlatformType = "flipkart"
+    post_title: Optional[str] = None
+
+
+class CompareItemResult(BaseModel):
+    id: str
+    post_title: str
+    platform: PlatformType
+    post_url: str
+    author_handle: str
+    video_views: int
+    engagement_likes: int
+    total_comments: int
+    positive_pct: float
+    negative_pct: float
+    neutral_pct: float
+    ai_score: float
+    rank: int
+    is_winner: bool = False
+    badge: str = ""
+    top_pain_point: str = "None"
+    summary_verdict: str = ""
+
+
+class MultiCompareResponse(BaseModel):
+    total_compared: int
+    winner_id: str
+    winner_title: str
+    ai_verdict_summary: str
+    items: List[CompareItemResult]
+
+
 class DatabaseManager:
     """SQLite + Optional MongoDB (MONGO_URI) persistence layer for saving and querying social sentiment analyses."""
 
