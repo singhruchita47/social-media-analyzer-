@@ -171,7 +171,13 @@
           (res) => {
             const err = chrome.runtime.lastError;
             if (err || !res || !res.success || !res.data) {
-              resolve(getFallbackAnalysis(details));
+              resolve({
+                error: (err && err.message) || (res && res.error) || 'Backend not reachable',
+                title: details.title,
+                url: details.url,
+                platform: details.platform,
+                brandName: details.brandName,
+              });
               return;
             }
 
@@ -246,18 +252,38 @@
   }
 
   // 3. Message listener for Toolbar Popup script communication
+  // Shares ONE in-flight request per URL (no duplicate backend analysis), never caches failures,
+  // and re-analyzes automatically when SPA sites (Myntra/Amazon) change the product URL.
+  let analysisUrl = null;
+  let analysisPromise = null;
+
+  function getAnalysisForCurrentPage() {
+    const details = autoDetectPageContext();
+    if (currentAnalysis && analysisUrl === details.url) {
+      return Promise.resolve(currentAnalysis);
+    }
+    if (analysisPromise && analysisUrl === details.url) {
+      return analysisPromise;
+    }
+    analysisUrl = details.url;
+    currentAnalysis = null;
+    analysisPromise = fetchBackendCommentAnalysis(details).then((analysis) => {
+      if (analysisUrl === details.url) {
+        if (analysis && !analysis.error) {
+          currentAnalysis = analysis;
+        }
+        analysisPromise = null;
+      }
+      return analysis;
+    });
+    return analysisPromise;
+  }
+
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'GET_ANALYSIS') {
-      if (currentAnalysis) {
-        sendResponse({ analysis: currentAnalysis });
-      } else {
-        const details = autoDetectPageContext();
-        fetchBackendCommentAnalysis(details).then((analysis) => {
-          currentAnalysis = analysis;
-          sendResponse({ analysis: analysis });
-        });
-        return true;
-      }
+      getAnalysisForCurrentPage().then((analysis) => {
+        sendResponse({ analysis: analysis });
+      });
       return true;
     }
 
@@ -271,8 +297,6 @@
   // Pre-load analysis silently in background so popup opens instantly
   const initialDetails = autoDetectPageContext();
   if (initialDetails.isSupported) {
-    fetchBackendCommentAnalysis(initialDetails).then((analysis) => {
-      currentAnalysis = analysis;
-    });
+    getAnalysisForCurrentPage();
   }
 })();

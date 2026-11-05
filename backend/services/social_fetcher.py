@@ -907,86 +907,93 @@ class SocialCommentFetcher:
 
             page = 1
             target_limit = max(10, min(max_comments, 5000))
-            max_pages = min(15, math.ceil(target_limit / 12) + 1)
+            max_pages = min(60, math.ceil(target_limit / 12) + 1)
 
-            while page <= max_pages:
-                page_url = f"https://www.myntra.com/reviews/{product_id}?page={page}"
-                try:
-                    resp = requests.get(page_url, headers=headers, timeout=5)
-                    if resp.status_code != 200:
+            def _get_page(p: int) -> Optional[Dict[str, Any]]:
+                """Downloads & parses one Myntra review page (retries once on timeout)."""
+                page_url = f"https://www.myntra.com/reviews/{product_id}?page={p}"
+                for attempt in range(2):
+                    try:
+                        resp = requests.get(page_url, headers=headers, timeout=12)
+                        if resp.status_code != 200:
+                            return None
+                        start_tag = "window.__myx = "
+                        start_idx = resp.text.find(start_tag)
+                        if start_idx == -1:
+                            return None
+                        content_start = start_idx + len(start_tag)
+                        content_end = resp.text.find("</script>", content_start)
+                        if content_end == -1:
+                            return None
+                        raw_json = resp.text[content_start:content_end].strip()
+                        if raw_json.endswith(";"):
+                            raw_json = raw_json[:-1].strip()
+                        return json.loads(raw_json)
+                    except Exception:
+                        if attempt == 1:
+                            return None
+                return None
+
+            def _add_reviews(page_reviews: List[Dict[str, Any]]) -> None:
+                for rev in page_reviews:
+                    if len(raw_comments) >= target_limit:
                         break
+                    user_name = rev.get("userName") or "Verified_Buyer"
+                    rating = rev.get("userRating", 5)
+                    text = rev.get("reviewText") or rev.get("review")
+                    if not text or not str(text).strip():
+                        text = f"Verified Buyer rated this product {rating} out of 5 stars."
+                    else:
+                        text = str(text).strip()
 
-                    start_tag = "window.__myx = "
-                    start_idx = resp.text.find(start_tag)
-                    if start_idx == -1:
-                        break
-                    content_start = start_idx + len(start_tag)
-                    content_end = resp.text.find("</script>", content_start)
-                    if content_end == -1:
-                        break
-
-                    raw_json = resp.text[content_start:content_end].strip()
-                    if raw_json.endswith(";"):
-                        raw_json = raw_json[:-1].strip()
-
-                    data = json.loads(raw_json)
-                    pdp = data.get("pdpData", {})
-
-                    if page == 1:
-                        product_name = product_name or pdp.get("name")
-                        brand_name = pdp.get("brand", {}).get("name") or brand_name
-                        ratings = pdp.get("ratings", {})
-                        total_ratings_count = ratings.get("totalCount") or total_ratings_count
-                        rev_info = ratings.get("reviewInfo", {})
+                    likes = int(rev.get("upvotes") or 0)
+                    rev_id = str(rev.get("id") or f"myntra_{product_id}_{len(raw_comments)+1}")
+                    updated_at = rev.get("updatedAt")
+                    if updated_at:
                         try:
-                            total_reviews_count = int(rev_info.get("reviewsCount") or total_reviews_count)
+                            pub_date = datetime.fromtimestamp(int(updated_at) / 1000).isoformat() + "Z"
                         except Exception:
-                            pass
-
-                    reviews_data = data.get("reviewsData", {})
-                    page_reviews = reviews_data.get("reviews", [])
-                    if not page_reviews:
-                        break
-
-                    for rev in page_reviews:
-                        user_name = rev.get("userName") or "Verified_Buyer"
-                        rating = rev.get("userRating", 5)
-                        text = rev.get("reviewText") or rev.get("review")
-                        if not text or not str(text).strip():
-                            text = f"Verified Buyer rated this product {rating} out of 5 stars."
-                        else:
-                            text = str(text).strip()
-
-                        likes = int(rev.get("upvotes") or 0)
-                        rev_id = str(rev.get("id") or f"myntra_{product_id}_{len(raw_comments)+1}")
-                        updated_at = rev.get("updatedAt")
-                        if updated_at:
-                            try:
-                                pub_date = datetime.fromtimestamp(int(updated_at) / 1000).isoformat() + "Z"
-                            except Exception:
-                                pub_date = datetime.utcnow().isoformat() + "Z"
-                        else:
                             pub_date = datetime.utcnow().isoformat() + "Z"
+                    else:
+                        pub_date = datetime.utcnow().isoformat() + "Z"
 
-                        raw_comments.append(
-                            {
-                                "comment_id": rev_id,
-                                "author": f"@{user_name.replace(' ', '_')}",
-                                "raw_text": text,
-                                "likes": likes,
-                                "published_at": pub_date,
-                            }
-                        )
+                    raw_comments.append(
+                        {
+                            "comment_id": rev_id,
+                            "author": f"@{user_name.replace(' ', '_')}",
+                            "raw_text": text,
+                            "likes": likes,
+                            "published_at": pub_date,
+                        }
+                    )
 
-                        if len(raw_comments) >= target_limit:
-                            break
-
-                    if len(raw_comments) >= target_limit or len(page_reviews) < 12:
-                        break
-
-                    page += 1
+            # Page 1 (sequential) -> product metadata + total review count
+            data = _get_page(1)
+            if data:
+                pdp = data.get("pdpData", {})
+                product_name = product_name or pdp.get("name")
+                brand_name = pdp.get("brand", {}).get("name") or brand_name
+                ratings = pdp.get("ratings", {})
+                total_ratings_count = ratings.get("totalCount") or total_ratings_count
+                rev_info = ratings.get("reviewInfo", {})
+                try:
+                    total_reviews_count = int(rev_info.get("reviewsCount") or total_reviews_count)
                 except Exception:
-                    break
+                    pass
+                page1_reviews = data.get("reviewsData", {}).get("reviews", [])
+                _add_reviews(page1_reviews)
+
+                # Remaining pages are downloaded IN PARALLEL (much faster than one-by-one)
+                if len(page1_reviews) >= 12 and len(raw_comments) < target_limit:
+                    needed_pages = min(max_pages, math.ceil(min(total_reviews_count, target_limit) / 12) + 1)
+                    if needed_pages >= 2:
+                        from concurrent.futures import ThreadPoolExecutor
+                        with ThreadPoolExecutor(max_workers=6) as pool:
+                            page_datas = list(pool.map(_get_page, range(2, needed_pages + 1)))
+                        for pdata in page_datas:
+                            if not pdata:
+                                continue
+                            _add_reviews(pdata.get("reviewsData", {}).get("reviews", []))
 
             if not raw_comments:
                 return None

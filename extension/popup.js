@@ -70,18 +70,57 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('pop-title').textContent = cleanTitle;
   document.getElementById('pop-title').title = cleanTitle;
 
-  // 1. Try to fetch active analysis from content script or directly call backend
+  // 1. Show live loading state, then get analysis from content script (shared request) or backend directly
+  showLoading();
   try {
     chrome.tabs.sendMessage(tab.id, { action: 'GET_ANALYSIS' }, (res) => {
       const err = chrome.runtime.lastError;
       if (err || !res || !res.analysis) {
+        // Content script not injected on this tab -> call backend directly
         fetchFromBackend(cleanUrl, cleanTitle, platform, brandName);
+      } else if (res.analysis.error) {
+        showError(res.analysis.error);
       } else {
         renderPopupData(res.analysis);
       }
     });
   } catch (err) {
     fetchFromBackend(cleanUrl, cleanTitle, platform, brandName);
+  }
+
+  function showLoading() {
+    const started = Date.now();
+    const box = document.getElementById('pop-comments-box');
+    const totalEl = document.getElementById('pop-total-reviews');
+    const tick = () => {
+      const s = Math.round((Date.now() - started) / 1000);
+      if (totalEl) totalEl.textContent = `⏳ Analyzing all comments... ${s}s`;
+      if (box) {
+        box.innerHTML = `<div style="font-size: 10.5px; color: #94a3b8; text-align: center;">
+          Fetching all reviews &amp; running AI sentiment (${s}s)...<br/>
+          First time ~10-20s, next time instant (cached).</div>`;
+      }
+    };
+    tick();
+    window.__sociafyLoadingTimer = setInterval(tick, 1000);
+  }
+
+  function stopLoading() {
+    if (window.__sociafyLoadingTimer) {
+      clearInterval(window.__sociafyLoadingTimer);
+      window.__sociafyLoadingTimer = null;
+    }
+  }
+
+  function showError(message) {
+    stopLoading();
+    document.getElementById('pop-total-reviews').textContent = '⚠️ Analysis failed';
+    const box = document.getElementById('pop-comments-box');
+    if (box) {
+      box.innerHTML = `<div style="font-size: 10.5px; color: #ef4444; text-align: center;">
+        ${String(message || 'Unknown error').replace(/</g, '&lt;')}<br/>
+        <span style="color:#94a3b8;">Make sure backend is running (python -m uvicorn main:app --port 8000), then reopen the popup.</span></div>`;
+    }
   }
 
   function fetchFromBackend(productUrl, title, plat, brand) {
@@ -134,52 +173,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
           }
 
-          // Fallback baseline
-          renderPopupData({
-            title: title,
-            platform: plat,
-            brandName: brand,
-            url: productUrl,
-            posPct: 85,
-            negPct: 2,
-            neuPct: 6,
-            totalAnalyzed: 48,
-            posCount: 41,
-            negCount: 1,
-            neuCount: 3,
-            comments: [
-              {
-                id: 'c1',
-                author: 'Verified User',
-                text: 'High quality content and wonderful presentation.',
-                sentiment: 'Positive',
-              },
-              {
-                id: 'c2',
-                author: 'Verified User',
-                text: 'Good overall, but delivery was a bit late.',
-                sentiment: 'Neutral',
-              },
-            ],
-          });
+          // Backend failed -> show real error instead of fake numbers
+          showError((err && err.message) || (res && res.error) || 'Backend not reachable');
         }
       );
     } catch (e) {
-      renderPopupData({
-        title: title,
-        platform: plat,
-        brandName: brand,
-        url: productUrl,
-        posPct: 85,
-        negPct: 2,
-        neuPct: 6,
-        totalAnalyzed: 48,
-        comments: [],
-      });
+      showError(e.message);
     }
   }
 
   function renderPopupData(data) {
+    stopLoading();
     if (data.title) {
       document.getElementById('pop-title').textContent = data.title;
       document.getElementById('pop-title').title = data.title;

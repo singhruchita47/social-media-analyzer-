@@ -1,8 +1,11 @@
 import json
 import os
 import re
+import time
 import warnings
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as FuturesTimeout
 from typing import Any, Dict, List, Optional, Tuple
 import pandas as pd
 import requests
@@ -38,6 +41,9 @@ with warnings.catch_warnings():
         import google.generativeai as genai
     except ImportError:
         genai = None
+
+LLM_TOTAL_BUDGET_SECONDS = 30
+_LLM_EXECUTOR = ThreadPoolExecutor(max_workers=4)
 
 
 class DeepMojiEmotionEngine:
@@ -700,27 +706,43 @@ class SentimentNLPEngine:
         records = df.to_dict(orient="records")
 
         if not force_sandbox:
+            # Each cloud LLM gets a strict time budget. If a provider is rate-limited / slow,
+            # we move on instead of hanging the extension for minutes. Total cloud budget ~35s.
+            deadline = time.time() + LLM_TOTAL_BUDGET_SECONDS
+
+            def _try(provider_fn) -> Optional[Tuple]:
+                remaining = deadline - time.time()
+                if remaining <= 2:
+                    return None
+                future = _LLM_EXECUTOR.submit(provider_fn, records, platform, post_title)
+                try:
+                    return future.result(timeout=remaining)
+                except FuturesTimeout:
+                    return None
+                except Exception:
+                    return None
+
             # 1. Primary: Anthropic Claude 3.5 Sonnet (claude-3-5-sonnet-20241022)
             if self._has_valid_anthropic_key():
-                claude_result = self._analyze_with_claude(records, platform, post_title)
+                claude_result = _try(self._analyze_with_claude)
                 if claude_result is not None:
                     return claude_result
 
             # 2. Secondary: OpenAI GPT-4o (gpt-4o)
             if self._has_valid_openai_key():
-                openai_result = self._analyze_with_openai(records, platform, post_title)
+                openai_result = _try(self._analyze_with_openai)
                 if openai_result is not None:
                     return openai_result
 
             # 3. Groq Llama 3.3 70B (Fast, Free, Exceptional Multi-lingual/Hinglish accuracy)
             if self._has_valid_groq_key():
-                groq_result = self._analyze_with_groq(records, platform, post_title)
+                groq_result = _try(self._analyze_with_groq)
                 if groq_result is not None:
                     return groq_result
 
             # 4. Google Gemini with Multi-Key Rotation Pool (prevents 429 quota exhaustion)
             if self._has_valid_gemini_key():
-                gemini_result = self._analyze_with_gemini(records, platform, post_title)
+                gemini_result = _try(self._analyze_with_gemini)
                 if gemini_result is not None:
                     return gemini_result
 
@@ -953,8 +975,14 @@ class SentimentNLPEngine:
             insights: List[str] = []
             total_to_process = min(len(records), 200)
 
-            for i in range(0, total_to_process, chunk_size):
-                chunk = records[i : i + chunk_size]
+            headers = {
+                "Authorization": f"Bearer {self.groq_api_key}",
+                "Content-Type": "application/json",
+            }
+
+            def _run_chunk(start_idx: int) -> Optional[Dict[str, Any]]:
+                """Classifies one chunk of comments (runs in parallel worker thread)."""
+                chunk = records[start_idx : start_idx + chunk_size]
                 batch_input = [
                     {
                         "id": str(r["comment_id"]),
@@ -964,16 +992,12 @@ class SentimentNLPEngine:
                 ]
                 user_prompt = (
                     f"Platform: {platform.upper()} | Post: {post_title}\n"
-                    f"Batch {i//chunk_size + 1}: Analyze the following {len(batch_input)} comments.\n"
+                    f"Batch {start_idx//chunk_size + 1}: Analyze the following {len(batch_input)} comments.\n"
                     "CRITICAL: If a comment is asking a question/inquiry/price check/link/doubt, classify sentiment as 'Question'.\n"
                     "If a sentence is sarcastic/complaining (even with happy emojis), classify sentiment as 'Negative'.\n"
                     "Return valid JSON matching the schema specified in your system instructions:\n\n"
                     f"{json.dumps(batch_input, ensure_ascii=False)}"
                 )
-                headers = {
-                    "Authorization": f"Bearer {self.groq_api_key}",
-                    "Content-Type": "application/json",
-                }
                 payload = {
                     "model": self.groq_model,
                     "temperature": 0.1,
@@ -983,25 +1007,44 @@ class SentimentNLPEngine:
                         {"role": "user", "content": user_prompt},
                     ],
                 }
-                resp = requests.post(
-                    "https://api.groq.com/openai/v1/chat/completions",
-                    headers=headers,
-                    json=payload,
-                    timeout=25,
-                )
-                if resp.status_code == 200:
-                    data = resp.json()
-                    choices = data.get("choices", [])
-                    if choices:
+                for attempt in range(2):
+                    try:
+                        resp = requests.post(
+                            "https://api.groq.com/openai/v1/chat/completions",
+                            headers=headers,
+                            json=payload,
+                            timeout=25,
+                        )
+                        if resp.status_code == 429 and attempt == 0:
+                            time.sleep(2)
+                            continue
+                        if resp.status_code != 200:
+                            return None
+                        choices = resp.json().get("choices", [])
+                        if not choices:
+                            return None
                         raw_c = choices[0].get("message", {}).get("content", "")
-                        parsed_chunk = json.loads(raw_c)
-                        for item in parsed_chunk.get("classifications", []):
-                            if isinstance(item, dict) and "id" in item:
-                                all_cls_map[str(item["id"])] = item
-                        if not exec_summary and parsed_chunk.get("executive_summary"):
-                            exec_summary = parsed_chunk["executive_summary"]
-                        if not insights and parsed_chunk.get("actionable_insights"):
-                            insights = parsed_chunk["actionable_insights"]
+                        return json.loads(raw_c)
+                    except Exception:
+                        if attempt == 1:
+                            return None
+                return None
+
+            # All chunks are classified IN PARALLEL (instead of one-after-another)
+            starts = list(range(0, total_to_process, chunk_size))
+            with ThreadPoolExecutor(max_workers=min(5, max(1, len(starts)))) as pool:
+                parsed_chunks = list(pool.map(_run_chunk, starts))
+
+            for parsed_chunk in parsed_chunks:
+                if not parsed_chunk:
+                    continue
+                for item in parsed_chunk.get("classifications", []):
+                    if isinstance(item, dict) and "id" in item:
+                        all_cls_map[str(item["id"])] = item
+                if not exec_summary and parsed_chunk.get("executive_summary"):
+                    exec_summary = parsed_chunk["executive_summary"]
+                if not insights and parsed_chunk.get("actionable_insights"):
+                    insights = parsed_chunk["actionable_insights"]
 
             if not all_cls_map:
                 return None
