@@ -50,11 +50,23 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('pop-detected-url').title = cleanUrl;
 
   let cleanTitle = (tab.title || 'Audience Comment Analysis')
+    .replace(/<[^>]*>/g, '')
     .replace(/\s*-\s*YouTube$/i, '')
     .replace(/\s*•\s*Instagram.*$/i, '')
     .replace(/\s*\|\s*.*$/, '')
     .replace(/\s*:\s*Buy.*$/i, '')
     .trim();
+
+  if (/sort by|results for|1-\d+ of/i.test(cleanTitle)) {
+    try {
+      const u = new URL(rawUrl);
+      const kw = u.searchParams.get('hidden-keywords') || u.searchParams.get('k') || u.searchParams.get('q');
+      if (kw) {
+        cleanTitle = `${brandName}: ${decodeURIComponent(kw).replace(/\+/g, ' ')} Collection`;
+      }
+    } catch (e) {}
+  }
+  cleanTitle = cleanTitle.replace(/\s+/g, ' ').trim();
   document.getElementById('pop-title').textContent = cleanTitle;
   document.getElementById('pop-title').title = cleanTitle;
 

@@ -466,10 +466,18 @@ export default function App() {
                       darkMode ? 'text-white' : 'text-slate-900'
                     }`}
                   >
-                    {activeSingleAnalysis.post_title}
+                    {String(activeSingleAnalysis.post_title || '')
+                      .replace(/<[^>]*>/g, '')
+                      .replace(/(?:1-\d+ of (?:over )?[\d,]+ results|Sort by:.*$)/gi, '')
+                      .replace(/\s+/g, ' ')
+                      .trim() || 'Product Analysis'}
                   </h3>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    {activeSingleAnalysis.executive_summary}
+                    {String(activeSingleAnalysis.executive_summary || '')
+                      .replace(/<[^>]*>/g, '')
+                      .replace(/(?:1-\d+ of (?:over )?[\d,]+ results|Sort by:.*$)/gi, '')
+                      .replace(/\s+/g, ' ')
+                      .trim()}
                   </p>
                 </div>
 

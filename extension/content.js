@@ -121,7 +121,26 @@
       }
     }
 
-    if (!title) {
+    // Sanitize title from HTML tags and search/sort bar artifacts
+    if (title) {
+      title = title.replace(/<[^>]*>/g, '');
+      if (/sort by|results for|1-\d+ of/i.test(title)) {
+        try {
+          const u = new URL(rawUrl, window.location.origin);
+          const kw = u.searchParams.get('hidden-keywords') || u.searchParams.get('k') || u.searchParams.get('q');
+          if (kw) {
+            title = `${brandName}: ${decodeURIComponent(kw).replace(/\+/g, ' ')} Collection`;
+          } else {
+            title = title.replace(/(?:1-\d+ of (?:over )?[\d,]+ results|Sort by:.*$)/gi, '');
+          }
+        } catch (e) {
+          title = title.replace(/(?:1-\d+ of (?:over )?[\d,]+ results|Sort by:.*$)/gi, '');
+        }
+      }
+      title = title.replace(/\s+/g, ' ').trim();
+    }
+
+    if (!title || title.length < 3) {
       title = `${brandName} Post / Product Analysis`;
     }
 

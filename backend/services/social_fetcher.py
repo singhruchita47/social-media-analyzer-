@@ -1075,23 +1075,39 @@ class SocialCommentFetcher:
                 if resp.status_code == 200:
                     soup = BeautifulSoup(resp.text, "html.parser")
                     if not title:
+                        prod_title = soup.find(id="productTitle")
                         og_title = soup.find("meta", property="og:title")
-                        if og_title and og_title.get("content"):
+                        if prod_title and prod_title.get_text(strip=True):
+                            title = prod_title.get_text(strip=True)
+                        elif og_title and og_title.get("content"):
                             title = og_title["content"].strip()
                         elif soup.find("h1"):
-                            title = soup.find("h1").get_text(strip=True)
-                        elif soup.title and soup.title.string:
+                            h1_text = soup.find("h1").get_text(" ", strip=True)
+                            # Avoid grabbing search sort toolbars as title
+                            if not any(k in h1_text.lower() for k in ["sort by", "results for", "1-16 of"]):
+                                title = h1_text
+                        if not title and soup.title and soup.title.string:
                             title = soup.title.string.strip()
 
-                    # Clean title
+                    # Clean and sanitize title
                     if title:
+                        title = re.sub(r"<[^>]+>", "", title)
+                        if any(k in title.lower() for k in ["sort by", "results for", "1-16 of over", "featured price"]):
+                            m = re.search(r"(?:hidden-keywords|k|q|query)=([a-zA-Z0-9_\+\-%]+)", post_url)
+                            if m:
+                                import urllib.parse
+                                kw = urllib.parse.unquote_plus(m.group(1)).replace("+", " ").strip().title()
+                                title = f"{brand_name}: {kw} Collection"
+                            else:
+                                title = re.sub(r"(?:1-\d+ of (?:over )?[\d,]+ results|Sort by:.*$)", "", title, flags=re.DOTALL | re.IGNORECASE)
                         title = re.sub(r"\s*\|\s*.*$", "", title)
                         title = re.sub(
                             r"\s*:\s*(?:Buy|Amazon|Flipkart|Myntra|Meesho|Nykaa).*$",
                             "",
                             title,
                             flags=re.IGNORECASE,
-                        ).strip()
+                        )
+                        title = re.sub(r"\s+", " ", title).strip()
 
                     # 1. Parse Schema.org JSON-LD
                     for script in soup.find_all("script", type="application/ld+json"):
