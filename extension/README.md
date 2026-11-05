@@ -1,57 +1,59 @@
-# 🧩 Sociafy AI — E-Commerce Sentiment & Focus Filter Browser Extension
+# 🧩 Sociafy AI — Browser Extension (Manifest V3)
 
-Instant in-page sentiment analysis for **Amazon, Flipkart, Myntra, Meesho, Nykaa, and Ajio**.
-Eliminates copy-pasting links and lets users analyze products with a single click right on the product page.
+> **Instant In-Browser Audience & Customer Sentiment Analysis**  
+> Supports **Amazon, Flipkart, Myntra, Meesho, Nykaa, Ajio, and YouTube**.
 
 ---
 
-## 🌟 Key Features
+## 🌟 Overview
 
-1. **✨ Floating In-Page Widget:**
-   - Appears automatically at the bottom-right corner on any e-commerce product page.
-   - 1-click opens a sleek Side-Panel Drawer.
+The **Sociafy AI Chrome Extension** brings automated review and comment intelligence directly to your browser toolbar. It automatically detects the active e-commerce product or YouTube video and delivers real-time NLP sentiment analysis without cluttering the webpage with unwanted floating elements or popups.
 
-2. **📊 Instant Sentiment Breakdown:**
-   - **🟢 Positive %**
-   - **🔴 Negative %**
-   - **🟡 Neutral %**
-   - Deep NLP analysis with top problem tags: 🚚 **Delivery Delays**, 💰 **Price Concerns**, 🧵 **Quality/Fit Defects**.
+---
 
-3. **🎯 Smart In-Page Focus Mode & Distraction Blocker:**
-   - **Auto-Scroll to Reviews:** Clicking Positive/Negative smoothly scrolls the browser down directly to customer reviews.
-   - **Hides Recommended Distractions:** Hides *"Similar dresses"*, *"Customers who bought this also bought"*, *"Sponsored carousels"*, and ad grids.
-   - **Filter Reviews In-Page:** Only displays reviews matching the clicked sentiment, highlighting them with glowing badges (`🟢 Positive Review` or `🔴 Complaint Highlight`).
-   - **1-Click Exit Focus Mode:** A top floating sticky bar lets you toggle back to the full page at any time.
+## ✨ Features
+
+1. **Clean & Distraction-Free:**
+   - Runs exclusively from the **Chrome Toolbar Icon** (`popup.html`).
+   - No injected ads, floating buttons, or DOM pollution on target websites.
+
+2. **Real-Time Sentiment Breakdown:**
+   - 🟢 **Positive %** (Audience satisfaction ratio)
+   - 🔴 **Negative %** (Defect, complaint & late-delivery ratio)
+   - 🟡 **Neutral %** (Inquiries, queries & balanced feedback)
+
+3. **Live Analysis Progress Counter:**
+   - Displays a dynamic real-time timer (`⏳ Analyzing all comments... 5s`) during fresh product/video scraping.
+   - Subsequent visits load instantly (**< 0.1s**) via local database caching.
+
+4. **1-Click Deep Dive Redirect:**
+   - Click **Positive**, **Negative**, or **Neutral** in the popup to open the full Sociafy Web Dashboard with pre-filtered comments and topic clouds.
 
 ---
 
 ## 🚀 How to Install in Chrome / Edge (15 Seconds)
 
 1. Open **Google Chrome** or **Microsoft Edge**.
-2. In the address bar, go to:
-   - For Chrome: `chrome://extensions`
-   - For Edge: `edge://extensions`
+2. Navigate to:
+   - Chrome: `chrome://extensions`
+   - Edge: `edge://extensions`
 3. Toggle on **"Developer mode"** (top-right corner).
-4. Click the button: **"Load unpacked"**.
-5. Select the `extension` folder located inside this project:
+4. Click **"Load unpacked"** (top-left corner).
+5. Select the `extension` folder inside this repository:
    ```
-   C:\Users\91626\OneDrive\Desktop\Social Media Hub\extension
+   Social Media Hub/extension
    ```
-6. **Done!** The extension icon will appear in your browser toolbar.
+6. **Done!** Pin the Sociafy extension icon to your browser toolbar.
 
 ---
 
 ## 🛍️ How to Use
 
-1. Go to any product page on:
-   - **Amazon:** `amazon.in` or `amazon.com`
-   - **Flipkart:** `flipkart.com`
-   - **Myntra:** `myntra.com`
-   - **Meesho / Nykaa / Ajio**
-2. Look at the bottom-right corner of your screen—you will see:
-   `✨ Sociafy AI Analysis`
-3. Click it to open the Side-Panel.
-4. Click **🟢 Positive** or **🔴 Negative**:
-   - The page automatically scrolls to the reviews.
-   - All unrelated dress/product carousels disappear!
-   - You only see the main product and its filtered reviews.
+1. Navigate to any supported product or video page:
+   - **Myntra:** `https://www.myntra.com/...`
+   - **Flipkart:** `https://www.flipkart.com/...`
+   - **Amazon:** `https://www.amazon.in/...` or `https://www.amazon.com/...`
+   - **YouTube:** `https://www.youtube.com/watch?v=...`
+2. Click the **Sociafy AI** icon in your browser toolbar.
+3. View the live analysis breakdown and top preview comments.
+4. Click any sentiment pill or **"View All Comments in Sociafy Website →"** to explore deep NLP insights, pain points, and comparison matrices!
