@@ -9,6 +9,7 @@ import LiveInsightsPanel from './components/LiveInsightsPanel.jsx';
 import PlatformAnalyticsView from './components/PlatformAnalyticsView.jsx';
 import HistoryView from './components/HistoryView.jsx';
 import AnalyzeModal from './components/AnalyzeModal.jsx';
+import ExtensionModal from './components/ExtensionModal.jsx';
 import {
   FALLBACK_STATS,
   fetchStats,
@@ -47,6 +48,7 @@ export default function App() {
   const [historyItems, setHistoryItems] = useState([]);
   const [backendHealthy, setBackendHealthy] = useState(true);
   const [isAnalyzeModalOpen, setIsAnalyzeModalOpen] = useState(false);
+  const [isExtensionModalOpen, setIsExtensionModalOpen] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
 
@@ -316,6 +318,7 @@ export default function App() {
           darkMode={darkMode}
           setDarkMode={setDarkMode}
           onOpenAnalyzeModal={() => setIsAnalyzeModalOpen(true)}
+          onOpenExtensionModal={() => setIsExtensionModalOpen(true)}
           onExportCSV={handleExportCSV}
           onExportPDF={handleExportPDF}
           sidebarOpen={sidebarOpen}
@@ -703,6 +706,12 @@ export default function App() {
         isAnalyzing={isAnalyzing}
         defaultPlatform={selectedPlatform}
         darkMode={darkMode}
+      />
+
+      {/* Browser Extension In-Page Modal */}
+      <ExtensionModal
+        isOpen={isExtensionModalOpen}
+        onClose={() => setIsExtensionModalOpen(false)}
       />
     </div>
   );

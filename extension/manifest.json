@@ -1,0 +1,54 @@
+{
+  "manifest_version": 3,
+  "name": "Sociafy AI — E-Commerce Sentiment & Focus Filter",
+  "version": "1.0.0",
+  "description": "Instant in-page sentiment analysis for Amazon, Flipkart, Myntra & more. Click Positive/Negative to auto-scroll & hide all recommended distractions.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Sociafy AI Extension",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": [
+    "activeTab",
+    "storage"
+  ],
+  "host_permissions": [
+    "http://localhost:8000/*",
+    "http://127.0.0.1:8000/*",
+    "*://*.amazon.in/*",
+    "*://*.amazon.com/*",
+    "*://*.flipkart.com/*",
+    "*://*.myntra.com/*",
+    "*://*.meesho.com/*",
+    "*://*.nykaa.com/*",
+    "*://*.ajio.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.amazon.in/*",
+        "*://*.amazon.com/*",
+        "*://*.flipkart.com/*",
+        "*://*.myntra.com/*",
+        "*://*.meesho.com/*",
+        "*://*.nykaa.com/*",
+        "*://*.ajio.com/*"
+      ],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}

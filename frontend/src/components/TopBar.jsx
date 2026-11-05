@@ -10,6 +10,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   FileText,
+  Puzzle,
 } from 'lucide-react';
 
 export default function TopBar({
@@ -20,6 +21,7 @@ export default function TopBar({
   darkMode,
   setDarkMode,
   onOpenAnalyzeModal,
+  onOpenExtensionModal,
   onExportCSV,
   onExportPDF,
   sidebarOpen = true,
@@ -142,6 +144,16 @@ export default function TopBar({
         >
           <Download className="w-3.5 h-3.5 text-slate-500" />
           Export CSV
+        </button>
+
+        <button
+          onClick={onOpenExtensionModal}
+          title="Install Chrome Extension for Direct In-Page Analysis on Amazon/Flipkart/Myntra"
+          className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold border border-purple-200/90 text-purple-700 bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/40 dark:border-purple-800 dark:text-purple-300 dark:hover:bg-purple-900/50 transition shadow-sm"
+        >
+          <Puzzle className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+          <span className="hidden sm:inline">Chrome Extension</span>
+          <span className="sm:hidden">Extension</span>
         </button>
 
         <button

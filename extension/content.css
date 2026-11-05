@@ -1,0 +1,414 @@
+/* ==========================================================================
+   Sociafy AI — In-Page Product & Review Side-Panel + Focus Mode Styles
+   ========================================================================== */
+
+/* 1. Floating Action Button */
+#sociafy-floating-trigger {
+  position: fixed !important;
+  bottom: 24px !important;
+  right: 24px !important;
+  z-index: 2147483640 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 12px 18px !important;
+  background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 50%, #3b82f6 100%) !important;
+  color: #ffffff !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.2px !important;
+  border-radius: 9999px !important;
+  box-shadow: 0 10px 25px -5px rgba(236, 72, 153, 0.5), 0 8px 10px -6px rgba(139, 92, 246, 0.3) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.3) !important;
+  cursor: pointer !important;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  user-select: none !important;
+}
+
+#sociafy-floating-trigger:hover {
+  transform: translateY(-3px) scale(1.03) !important;
+  box-shadow: 0 16px 32px -4px rgba(236, 72, 153, 0.65), 0 10px 14px -5px rgba(139, 92, 246, 0.4) !important;
+}
+
+#sociafy-floating-trigger:active {
+  transform: translateY(0) scale(0.98) !important;
+}
+
+.sociafy-spark-icon {
+  width: 18px !important;
+  height: 18px !important;
+  display: inline-block !important;
+  animation: sociafyPulse 2s infinite ease-in-out !important;
+}
+
+@keyframes sociafyPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.18); opacity: 0.85; }
+}
+
+/* 2. Side Panel Container */
+#sociafy-side-panel {
+  position: fixed !important;
+  top: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 420px !important;
+  max-width: 92vw !important;
+  height: 100vh !important;
+  z-index: 2147483645 !important;
+  background: #ffffff !important;
+  box-shadow: -10px 0 40px rgba(0, 0, 0, 0.18) !important;
+  border-left: 1px solid #e2e8f0 !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  display: flex !important;
+  flex-direction: column !important;
+  transform: translateX(100%) !important;
+  transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  box-sizing: border-box !important;
+  color: #0f172a !important;
+}
+
+#sociafy-side-panel.sociafy-panel-open {
+  transform: translateX(0) !important;
+}
+
+/* Backdrop */
+#sociafy-panel-backdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  background: rgba(15, 23, 42, 0.35) !important;
+  backdrop-filter: blur(2px) !important;
+  z-index: 2147483642 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: opacity 0.25s ease !important;
+}
+
+#sociafy-panel-backdrop.sociafy-backdrop-active {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* Header */
+.sociafy-header {
+  padding: 16px 20px !important;
+  background: #f8fafc !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+.sociafy-brand-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.sociafy-badge-brand {
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  padding: 3px 8px !important;
+  border-radius: 6px !important;
+  background: #fdf2f8 !important;
+  color: #db2777 !important;
+  border: 1px solid #fbcfe8 !important;
+}
+
+.sociafy-close-btn {
+  background: transparent !important;
+  border: none !important;
+  font-size: 20px !important;
+  cursor: pointer !important;
+  color: #64748b !important;
+  padding: 4px 8px !important;
+  border-radius: 6px !important;
+  transition: background 0.15s !important;
+}
+
+.sociafy-close-btn:hover {
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+/* Panel Body */
+.sociafy-body {
+  padding: 18px 20px !important;
+  overflow-y: auto !important;
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+}
+
+/* Product Info Box */
+.sociafy-product-card {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  padding: 14px !important;
+}
+
+.sociafy-product-title {
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+  color: #1e293b !important;
+  line-height: 1.4 !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+
+.sociafy-meta-row {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin-top: 8px !important;
+  font-size: 11.5px !important;
+  color: #64748b !important;
+}
+
+/* Section Title */
+.sociafy-section-title {
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.6px !important;
+  color: #64748b !important;
+  margin-bottom: 8px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+/* Sentiment Filter Buttons (Positive, Negative, Neutral) */
+.sociafy-sentiment-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 8px !important;
+}
+
+.sociafy-sentiment-btn {
+  border-radius: 10px !important;
+  padding: 10px 8px !important;
+  border: 1.5px solid !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  text-align: center !important;
+  cursor: pointer !important;
+  background: #ffffff !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  user-select: none !important;
+}
+
+.sociafy-sentiment-btn:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06) !important;
+}
+
+.sociafy-btn-pos {
+  border-color: #a7f3d0 !important;
+  color: #065f46 !important;
+}
+.sociafy-btn-pos:hover, .sociafy-btn-pos.sociafy-active {
+  background: #ecfdf5 !important;
+  border-color: #10b981 !important;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25) !important;
+}
+
+.sociafy-btn-neg {
+  border-color: #fecaca !important;
+  color: #991b1b !important;
+}
+.sociafy-btn-neg:hover, .sociafy-btn-neg.sociafy-active {
+  background: #fef2f2 !important;
+  border-color: #ef4444 !important;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.25) !important;
+}
+
+.sociafy-btn-neu {
+  border-color: #fed7aa !important;
+  color: #9a3412 !important;
+}
+.sociafy-btn-neu:hover, .sociafy-btn-neu.sociafy-active {
+  background: #fff7ed !important;
+  border-color: #f59e0b !important;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.25) !important;
+}
+
+.sociafy-pct-val {
+  font-size: 18px !important;
+  font-weight: 800 !important;
+}
+
+.sociafy-pct-label {
+  font-size: 10.5px !important;
+  font-weight: 700 !important;
+  margin-top: 2px !important;
+}
+
+.sociafy-click-action {
+  font-size: 9px !important;
+  color: #64748b !important;
+  margin-top: 4px !important;
+  text-decoration: underline !important;
+}
+
+/* Issues Breakdown Cards (Delivery, Price, Quality) */
+.sociafy-issues-grid {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+}
+
+.sociafy-issue-item {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 10px 12px !important;
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #334155 !important;
+  cursor: pointer !important;
+  transition: all 0.15s !important;
+}
+
+.sociafy-issue-item:hover {
+  background: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  transform: translateX(3px) !important;
+}
+
+.sociafy-issue-left {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.sociafy-issue-badge {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  padding: 2px 7px !important;
+  border-radius: 9999px !important;
+  background: #fee2e2 !important;
+  color: #b91c1c !important;
+}
+
+/* Filtered Reviews List in Side Panel */
+.sociafy-reviews-container {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+}
+
+.sociafy-mini-review {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+  padding: 12px !important;
+  font-size: 12px !important;
+  line-height: 1.45 !important;
+  color: #334155 !important;
+}
+
+.sociafy-mini-author {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: #0f172a !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin-bottom: 5px !important;
+}
+
+/* ==========================================================================
+   IN-PAGE FOCUS MODE & DISTRACTION REMOVAL STYLES
+   ========================================================================== */
+
+/* 1. Distraction Hiding Class (Auto-hides recommendations, related dresses, carousels) */
+.sociafy-distraction-hidden {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* 2. Sticky Focus Banner at the Top of the Webpage */
+#sociafy-focus-banner {
+  position: fixed !important;
+  top: 12px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 2147483647 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 14px !important;
+  background: #0f172a !important;
+  color: #ffffff !important;
+  padding: 10px 20px !important;
+  border-radius: 9999px !important;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35) !important;
+  border: 1.5px solid #38bdf8 !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  animation: sociafySlideDown 0.3s ease !important;
+}
+
+@keyframes sociafySlideDown {
+  from { top: -60px; opacity: 0; }
+  to { top: 12px; opacity: 1; }
+}
+
+#sociafy-exit-focus-btn {
+  background: #ef4444 !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 9999px !important;
+  padding: 5px 14px !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: background 0.15s !important;
+}
+
+#sociafy-exit-focus-btn:hover {
+  background: #dc2626 !important;
+}
+
+/* 3. In-Page Review Highlight Styles */
+.sociafy-highlight-positive {
+  border: 2.5px solid #10b981 !important;
+  background-color: rgba(16, 185, 129, 0.04) !important;
+  border-radius: 8px !important;
+  position: relative !important;
+  transition: all 0.3s !important;
+}
+
+.sociafy-highlight-negative {
+  border: 2.5px solid #ef4444 !important;
+  background-color: rgba(239, 68, 68, 0.04) !important;
+  border-radius: 8px !important;
+  position: relative !important;
+  transition: all 0.3s !important;
+}
+
+.sociafy-highlight-neutral {
+  border: 2.5px solid #f59e0b !important;
+  background-color: rgba(245, 158, 11, 0.04) !important;
+  border-radius: 8px !important;
+  position: relative !important;
+  transition: all 0.3s !important;
+}

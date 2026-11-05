@@ -123,10 +123,30 @@ Frontend React state ko update karta hai:
 
 ---
 
+## 7. 🧩 In-Page Browser Extension & Smart Focus Filter Mode (Zero Link Required)
+
+User ko website par aakar link paste karne ki bhi zaroorat nahi hai:
+1. **In-Page Floating Widget:** Amazon, Flipkart, Myntra, Meesho, Nykaa, ya Ajio ke kisi bhi product page par bottom-right corner me `✨ Sociafy AI Analysis` button trigger hota hai.
+2. **Instant Side-Panel Drawer:** Click karte hi sleek drawer khulta hai jisme:
+   * **🟢 Positive %**, **🔴 Negative %**, **🟡 Neutral %**
+   * **🚚 Delivery**, **💰 Price**, **🧵 Quality/Fabric Defects**
+3. **Smart In-Page Focus Filter & Distraction Blocker:**
+   * Jab user **Positive** (ya Negative) par click karta hai:
+     * Webpage smoothly scroll hokar verified customer reviews par pahunch jata hai.
+     * All distracting recommendations (*"Similar dresses"*, *"Customers who bought this also bought"*, *"Sponsored carousels"*) temporary hide ho jati hain.
+     * Reviews section me sirf selected sentiment ke reviews highlight hokar dikhte hain.
+     * Webpage ke top par ek floating banner: `🎯 Sociafy Focus Mode | [Exit Focus Mode ✕]` lag jata hai.
+
+---
+
 ## 📊 Component & File Mapping Table
 
 | Component Name | File Location | Primary Responsibility |
 |---|---|---|
+| **Browser Extension Manifest** | [extension/manifest.json](file:///c:/Users/91626/OneDrive/Desktop/Social Media Hub/extension/manifest.json) | Chrome Manifest V3 setup & store permissions |
+| **In-Page Content Engine** | [extension/content.js](file:///c:/Users/91626/OneDrive/Desktop/Social Media Hub/extension/content.js) | Floating widget, side panel, review auto-scroll & distraction blocker |
+| **Extension Design & Banner** | [extension/content.css](file:///c:/Users/91626/OneDrive/Desktop/Social Media Hub/extension/content.css) | Shadow DOM styles, glowing badges & distraction-hidden CSS |
+| **Extension Modal** | [ExtensionModal.jsx](file:///c:/Users/91626/OneDrive/Desktop/Social Media Hub/frontend/src/components/ExtensionModal.jsx) | 1-click guide & folder path copy inside Sociafy Web Dashboard |
 | **FastAPI Gateway** | [backend/main.py](file:///c:/Users/91626/OneDrive/Desktop/Social Media Hub/backend/main.py) | REST API endpoints (`/api/analyze`, `/api/stats`, `/api/history`) |
 | **Universal Fetcher** | [social_fetcher.py](file:///c:/Users/91626/OneDrive/Desktop/Social Media Hub/backend/services/social_fetcher.py) | Myntra, Flipkart, Universal Web Scraper & CSV payload builder |
 | **Data Cleaning** | [pipeline.py](file:///c:/Users/91626/OneDrive/Desktop/Social Media Hub/backend/services/pipeline.py) | Pandas cleaning, emoji polarity clash, and deduplication |
