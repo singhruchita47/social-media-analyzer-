@@ -36,7 +36,13 @@ import {
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('sociafy_theme');
+    if (saved !== null) {
+      return saved === 'dark';
+    }
+    return true; // Default to Dark Mode
+  });
   const [sidebarOpen, setSidebarOpen] = useState(true);
   // Strictly 'youtube' or 'instagram' — never mixed together!
   const [selectedPlatform, setSelectedPlatform] = useState('youtube');
@@ -56,8 +62,10 @@ export default function App() {
     const rootEl = document.documentElement;
     if (darkMode) {
       rootEl.classList.add('dark');
+      localStorage.setItem('sociafy_theme', 'dark');
     } else {
       rootEl.classList.remove('dark');
+      localStorage.setItem('sociafy_theme', 'light');
     }
   }, [darkMode]);
 
