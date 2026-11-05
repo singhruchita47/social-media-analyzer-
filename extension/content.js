@@ -42,25 +42,33 @@
       brandName = 'Ajio';
     }
 
-    // Extract Product Title
+    // Extract Product Title with high precision
     let title = '';
-    const titleSelectors = [
-      '#productTitle',
-      'h1.pdp-title',
-      'h1.pdp-name',
-      'span.B_NuCI',
-      'h1._6EBuvT',
-      'h1.C7fE4A',
-      'h1.product-title',
-      'meta[property="og:title"]',
-      'h1',
-    ];
+    const brandEl = document.querySelector('h1.pdp-title');
+    const nameEl = document.querySelector('h1.pdp-name');
+    if (brandEl && nameEl) {
+      title = `${brandEl.textContent.trim()} — ${nameEl.textContent.trim()}`;
+    } else if (nameEl) {
+      title = nameEl.textContent.trim();
+    }
 
-    for (const sel of titleSelectors) {
-      const el = document.querySelector(sel);
-      if (el) {
-        title = el.tagName === 'META' ? el.getAttribute('content') : el.textContent.trim();
-        if (title && title.length > 5) break;
+    if (!title) {
+      const titleSelectors = [
+        '#productTitle',
+        'span.B_NuCI',
+        'h1._6EBuvT',
+        'h1.C7fE4A',
+        'h1.product-title',
+        'meta[property="og:title"]',
+        'h1',
+      ];
+
+      for (const sel of titleSelectors) {
+        const el = document.querySelector(sel);
+        if (el) {
+          title = el.tagName === 'META' ? el.getAttribute('content') : el.textContent.trim();
+          if (title && title.length > 5) break;
+        }
       }
     }
 
@@ -201,18 +209,24 @@
             }
             const data = res.data;
             const bd = data.sentiment_breakdown || {};
+            const total = data.total_comments || data.total_comments_analyzed || localFallback.totalAnalyzed;
             resolve({
-              totalAnalyzed: data.total_comments_analyzed || localFallback.totalAnalyzed,
-              posPct: Math.round(bd.primary_positive_pct || localFallback.posPct),
-              negPct: Math.round(bd.primary_negative_pct || localFallback.negPct),
-              neuPct: Math.round(bd.primary_neutral_pct || localFallback.neuPct),
-              posCount: bd.positive_count || localFallback.posCount,
-              negCount: bd.negative_count || localFallback.negCount,
-              neuCount: bd.neutral_count || localFallback.neuCount,
-              deliveryIssues: data.pain_points_detected?.delivery_issues || localFallback.deliveryIssues,
-              priceIssues: data.pain_points_detected?.price_concerns || localFallback.priceIssues,
-              qualityIssues: data.pain_points_detected?.quality_defects || localFallback.qualityIssues,
-              reviews: localFallback.reviews,
+              totalAnalyzed: total,
+              posPct: Math.round(bd.primary_positive_pct ?? bd.positive_pct ?? localFallback.posPct),
+              negPct: Math.round(bd.primary_negative_pct ?? bd.negative_pct ?? localFallback.negPct),
+              neuPct: Math.round(bd.primary_neutral_pct ?? bd.neutral_pct ?? localFallback.neuPct),
+              posCount: bd.positive_count ?? localFallback.posCount,
+              negCount: bd.negative_count ?? localFallback.negCount,
+              neuCount: (bd.neutral_count ?? 0) + (bd.mixed_count ?? 0) || localFallback.neuCount,
+              deliveryIssues: data.pain_points_detected?.delivery_issues ?? localFallback.deliveryIssues,
+              priceIssues: data.pain_points_detected?.price_concerns ?? localFallback.priceIssues,
+              qualityIssues: data.pain_points_detected?.quality_defects ?? localFallback.qualityIssues,
+              reviews: data.recent_comments && data.recent_comments.length > 0 ? data.recent_comments.map((c) => ({
+                id: c.comment_id,
+                author: c.author,
+                text: c.cleaned_text || c.raw_text,
+                sentiment: c.sentiment
+              })) : localFallback.reviews,
             });
           }
         );
@@ -416,6 +430,17 @@
     document.getElementById('sociafy-val-pos').textContent = `${data.posPct}%`;
     document.getElementById('sociafy-val-neg').textContent = `${data.negPct}%`;
     document.getElementById('sociafy-val-neu').textContent = `${data.neuPct}%`;
+
+    const posLabel = data.posCount ? `🟢 Positive (${data.posCount})` : '🟢 Positive';
+    const negLabel = data.negCount ? `🔴 Negative (${data.negCount})` : '🔴 Negative';
+    const neuLabel = data.neuCount ? `🟡 Neutral (${data.neuCount})` : '🟡 Neutral';
+
+    const posEl = document.querySelector('#sociafy-btn-positive .sociafy-pct-label');
+    const negEl = document.querySelector('#sociafy-btn-negative .sociafy-pct-label');
+    const neuEl = document.querySelector('#sociafy-btn-neutral .sociafy-pct-label');
+    if (posEl) posEl.textContent = posLabel;
+    if (negEl) negEl.textContent = negLabel;
+    if (neuEl) neuEl.textContent = neuLabel;
 
     document.getElementById('sociafy-total-reviews-count').textContent = `${data.totalAnalyzed} verified reviews analyzed`;
     document.getElementById('sociafy-count-del').textContent = `${data.deliveryIssues} issues`;

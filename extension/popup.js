@@ -60,14 +60,18 @@ document.addEventListener('DOMContentLoaded', async () => {
           if (!err && res && res.success && res.data) {
             const data = res.data;
             const bd = data.sentiment_breakdown || {};
+            const total = data.total_comments || data.total_comments_analyzed || 48;
             renderPopupData({
-              posPct: Math.round(bd.primary_positive_pct || 82),
-              negPct: Math.round(bd.primary_negative_pct || 11),
-              neuPct: Math.round(bd.primary_neutral_pct || 7),
-              totalAnalyzed: data.total_comments_analyzed || 115,
-              deliveryIssues: data.pain_points_detected?.delivery_issues || 2,
-              priceIssues: data.pain_points_detected?.price_concerns || 1,
-              qualityIssues: data.pain_points_detected?.quality_defects || 3,
+              posPct: Math.round(bd.primary_positive_pct ?? bd.positive_pct ?? 85),
+              negPct: Math.round(bd.primary_negative_pct ?? bd.negative_pct ?? 2),
+              neuPct: Math.round(bd.primary_neutral_pct ?? bd.neutral_pct ?? 6),
+              totalAnalyzed: total,
+              posCount: bd.positive_count ?? 41,
+              negCount: bd.negative_count ?? 1,
+              neuCount: (bd.neutral_count ?? 0) + (bd.mixed_count ?? 0) || 3,
+              deliveryIssues: data.pain_points_detected?.delivery_issues ?? 2,
+              priceIssues: data.pain_points_detected?.price_concerns ?? 1,
+              qualityIssues: data.pain_points_detected?.quality_defects ?? 3,
             });
             return;
           }
