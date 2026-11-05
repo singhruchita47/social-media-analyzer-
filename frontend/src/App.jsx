@@ -108,7 +108,7 @@ export default function App() {
           const result = await analyzeSocialPost({
             platform: targetPlatform,
             post_url: autoUrl,
-            max_comments: 50,
+            max_comments: 1000,
           });
           setSelectedPlatform(result.platform);
           setActiveSingleAnalysis(result);

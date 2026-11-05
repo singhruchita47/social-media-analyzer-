@@ -81,7 +81,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             platform: plat,
             post_url: productUrl,
             post_title: title,
-            max_comments: 50,
+            max_comments: 1000,
             force_sandbox: false,
           },
         },

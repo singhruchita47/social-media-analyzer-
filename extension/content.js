@@ -145,7 +145,7 @@
               platform: details.platform,
               post_url: details.url,
               post_title: details.title,
-              max_comments: 50,
+              max_comments: 1000,
               force_sandbox: false,
             },
           },
